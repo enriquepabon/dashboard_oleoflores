@@ -1,0 +1,21 @@
+# Oleoflores BI Dashboard - Dependencias
+# ========================================
+
+# Framework Web
+streamlit>=1.28.0
+
+# Manipulación de Datos
+pandas>=2.0.0
+
+# Visualización Interactiva
+plotly>=5.18.0
+
+# Lectura de archivos Excel
+openpyxl>=3.1.0
+
+# Manejo de fechas
+python-dateutil>=2.8.0
+
+# Cálculos numéricos (dependencia de pandas)
+numpy>=1.24.0
+
