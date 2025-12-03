@@ -71,14 +71,14 @@
   - [x] 4.6 Agregar componente `st.file_uploader()` para carga de archivos CSV/Excel con validación
   - [x] 4.7 Implementar lógica de routing que muestre la vista seleccionada en el área principal
 
-- [ ] 5.0 Implementación de los Módulos de Vistas (Resumen, Upstream, Downstream)
-  - [ ] 5.1 Crear vista "Resumen Ejecutivo" con 4 Scorecards en fila (RFF, TEA, CPO, Margarinas) usando `st.columns(4)`
-  - [ ] 5.2 Agregar gráfico de tendencia (línea) Real vs Presupuesto debajo de los Scorecards en vista Resumen
-  - [ ] 5.3 Crear vista "Upstream" con sección superior: Bar Chart de RFF por Zona + Gauge de TEA
-  - [ ] 5.4 Agregar Heatmap de cosecha en la parte inferior de vista Upstream
-  - [ ] 5.5 Crear vista "Downstream" con Diagrama Sankey prominente en la parte superior
-  - [ ] 5.6 Agregar Area Chart de inventarios y Bullet Chart de cumplimiento en vista Downstream
-  - [ ] 5.7 Asegurar que los filtros de fecha y zona se apliquen correctamente a todas las visualizaciones
+- [x] 5.0 Implementación de los Módulos de Vistas (Resumen, Upstream, Downstream)
+  - [x] 5.1 Crear vista "Resumen Ejecutivo" con 4 Scorecards en fila (RFF, TEA, CPO, Margarinas) usando `st.columns(4)`
+  - [x] 5.2 Agregar gráfico de tendencia (línea) Real vs Presupuesto debajo de los Scorecards en vista Resumen
+  - [x] 5.3 Crear vista "Upstream" con sección superior: Bar Chart de RFF por Zona + Gauge de TEA
+  - [x] 5.4 Agregar Heatmap de cosecha en la parte inferior de vista Upstream
+  - [x] 5.5 Crear vista "Downstream" con Diagrama Sankey prominente en la parte superior
+  - [x] 5.6 Agregar Area Chart de inventarios y Bullet Chart de cumplimiento en vista Downstream
+  - [x] 5.7 Asegurar que los filtros de fecha y zona se apliquen correctamente a todas las visualizaciones
 
 - [ ] 6.0 Sistema de Alertas, Exportación y Validaciones Finales
   - [ ] 6.1 Crear función `validate_data_ranges()` en `utils.py` que detecte valores fuera de rango (TEA>35%, valores negativos, etc.)
@@ -99,9 +99,9 @@
 | 2.0 Módulo ETL | 8 | 8 | ✅ Completada |
 | 3.0 Módulo Visualizaciones | 8 | 8 | ✅ Completada |
 | 4.0 Interfaz Principal | 7 | 7 | ✅ Completada |
-| 5.0 Vistas Específicas | 7 | 0 | ⏳ Pendiente |
+| 5.0 Vistas Específicas | 7 | 7 | ✅ Completada |
 | 6.0 Alertas y Exportación | 7 | 0 | ⏳ Pendiente |
-| **TOTAL** | **44** | **30** | **68%** |
+| **TOTAL** | **44** | **37** | **84%** |
 
 ---
 
