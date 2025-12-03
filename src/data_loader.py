@@ -215,8 +215,8 @@ def normalize_dates(df: pd.DataFrame, date_column: str = 'fecha') -> pd.DataFram
             return df  # No se encontró columna de fecha
     
     try:
-        # Intentar conversión automática
-        df[date_column] = pd.to_datetime(df[date_column], dayfirst=True, errors='coerce')
+        # Intentar conversión automática (formato ISO primero, luego dayfirst)
+        df[date_column] = pd.to_datetime(df[date_column], format='mixed', dayfirst=True, errors='coerce')
         
         # Renombrar a 'fecha' si tiene otro nombre
         if date_column != 'fecha':

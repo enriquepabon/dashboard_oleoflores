@@ -176,14 +176,21 @@ def create_gauge_chart(
             (35, COLORS["dorado"])           # 25-35: Alto (amarillo)
         ]
     
-    # Construir steps para el gauge
+    # Construir steps para el gauge (colores con transparencia via rgba)
     steps = []
     prev_val = min_val
     for threshold_val, color in thresholds:
+        # Convertir hex a rgba con transparencia
+        if color.startswith("#"):
+            r = int(color[1:3], 16)
+            g = int(color[3:5], 16)
+            b = int(color[5:7], 16)
+            color_rgba = f"rgba({r}, {g}, {b}, 0.3)"
+        else:
+            color_rgba = color
         steps.append({
             "range": [prev_val, threshold_val],
-            "color": color,
-            "opacity": 0.3
+            "color": color_rgba
         })
         prev_val = threshold_val
     
