@@ -62,14 +62,14 @@
   - [x] 3.7 Crear función `create_bullet_chart()` para cumplimiento por SKU (Oleína vs Margarina vs Meta)
   - [x] 3.8 Crear función `create_trend_line_chart()` para gráfico de línea Producción Real vs Presupuesto en el tiempo
 
-- [ ] 4.0 Implementación de la Interfaz Principal y Sistema de Navegación
-  - [ ] 4.1 Configurar `st.set_page_config()` con título "Oleoflores BI Dashboard", layout="wide", icono personalizado
-  - [ ] 4.2 Implementar sidebar con logo (si disponible) y título del dashboard
-  - [ ] 4.3 Agregar selector de vista en sidebar usando `st.radio()`: [Resumen Ejecutivo, Upstream, Downstream]
-  - [ ] 4.4 Implementar filtro de rango de fechas en sidebar usando `st.date_input()` con opciones predefinidas (Semana, Mes, YTD)
-  - [ ] 4.5 Implementar selector de Zona en sidebar usando `st.multiselect()` con opciones: Codazzi, MLB, A&G, Sinú
-  - [ ] 4.6 Agregar componente `st.file_uploader()` para carga de archivos CSV/Excel con validación
-  - [ ] 4.7 Implementar lógica de routing que muestre la vista seleccionada en el área principal
+- [x] 4.0 Implementación de la Interfaz Principal y Sistema de Navegación
+  - [x] 4.1 Configurar `st.set_page_config()` con título "Oleoflores BI Dashboard", layout="wide", icono personalizado
+  - [x] 4.2 Implementar sidebar con logo (si disponible) y título del dashboard
+  - [x] 4.3 Agregar selector de vista en sidebar usando `st.radio()`: [Resumen Ejecutivo, Upstream, Downstream]
+  - [x] 4.4 Implementar filtro de rango de fechas en sidebar usando `st.date_input()` con opciones predefinidas (Semana, Mes, YTD)
+  - [x] 4.5 Implementar selector de Zona en sidebar usando `st.multiselect()` con opciones: Codazzi, MLB, A&G, Sinú
+  - [x] 4.6 Agregar componente `st.file_uploader()` para carga de archivos CSV/Excel con validación
+  - [x] 4.7 Implementar lógica de routing que muestre la vista seleccionada en el área principal
 
 - [ ] 5.0 Implementación de los Módulos de Vistas (Resumen, Upstream, Downstream)
   - [ ] 5.1 Crear vista "Resumen Ejecutivo" con 4 Scorecards en fila (RFF, TEA, CPO, Margarinas) usando `st.columns(4)`
@@ -98,10 +98,10 @@
 | 1.0 Configuración Inicial | 7 | 7 | ✅ Completada |
 | 2.0 Módulo ETL | 8 | 8 | ✅ Completada |
 | 3.0 Módulo Visualizaciones | 8 | 8 | ✅ Completada |
-| 4.0 Interfaz Principal | 7 | 0 | ⏳ Pendiente |
+| 4.0 Interfaz Principal | 7 | 7 | ✅ Completada |
 | 5.0 Vistas Específicas | 7 | 0 | ⏳ Pendiente |
 | 6.0 Alertas y Exportación | 7 | 0 | ⏳ Pendiente |
-| **TOTAL** | **44** | **23** | **52%** |
+| **TOTAL** | **44** | **30** | **68%** |
 
 ---
 
