@@ -264,53 +264,72 @@ with st.sidebar:
     año_actual = hoy.year
     mes_actual = hoy.month
     
-    # Calcular semanas del mes actual
-    semanas_mes = calcular_semanas_mes(año_actual, mes_actual)
+    # ========== SELECTOR DE MES/AÑO ==========
+    col_mes, col_año = st.columns(2)
+    with col_mes:
+        mes_sel = st.selectbox(
+            "Mes",
+            options=list(range(1, 13)),
+            index=mes_actual - 1,
+            format_func=lambda x: datetime(2000, x, 1).strftime('%B').capitalize(),
+            key="mes_selector"
+        )
+    with col_año:
+        año_sel = st.selectbox(
+            "Año",
+            options=list(range(2020, año_actual + 1)),
+            index=año_actual - 2020,
+            key="año_selector"
+        )
     
-    # Selector de mes (para ver meses anteriores)
-    meses_disponibles = []
-    for i in range(12):
-        fecha_mes = hoy.replace(day=1) - timedelta(days=i*30)
-        meses_disponibles.append(fecha_mes.strftime('%B %Y').capitalize())
+    # Calcular semanas del mes SELECCIONADO
+    semanas_mes = calcular_semanas_mes(año_sel, mes_sel)
     
-    # Crear opciones de período
-    opciones_periodo = ["📆 Mes (MTD)", "📅 Año (YTD)"]
+    # Nombre del mes seleccionado
+    nombre_mes = datetime(año_sel, mes_sel, 1).strftime('%B').capitalize()
     
-    # Agregar semanas del mes actual
+    # ========== CREAR OPCIONES DE PERÍODO ==========
+    opciones_periodo = []
+    
+    # Agregar semanas del mes seleccionado
     for semana, (inicio, fin) in semanas_mes.items():
-        opciones_periodo.insert(len(opciones_periodo)-2, f"📊 {semana} ({inicio.day}-{fin.day} {inicio.strftime('%b')})")
+        opciones_periodo.append(f"📊 {semana} ({inicio.day}-{fin.day} {nombre_mes[:3]})")
     
+    # Agregar opciones de acumulado
+    opciones_periodo.append(f"📆 Mes completo ({nombre_mes})")
+    opciones_periodo.append("📅 Año (YTD)")
     opciones_periodo.append("🔧 Personalizado")
     
     periodo_seleccionado = st.selectbox(
         "Rango de fechas",
         options=opciones_periodo,
-        index=0  # Por defecto: Mes (MTD)
+        index=0,  # Por defecto: S1
+        key="periodo_selector"
     )
     
-    # Calcular fechas según período seleccionado
+    # ========== CALCULAR FECHAS SEGÚN PERÍODO ==========
+    from calendar import monthrange
+    
     if "Personalizado" in periodo_seleccionado:
         col_fecha1, col_fecha2 = st.columns(2)
         with col_fecha1:
             fecha_inicio = st.date_input(
                 "Desde",
-                value=hoy.replace(day=1),
-                max_value=hoy
+                value=datetime(año_sel, mes_sel, 1).date()
             )
         with col_fecha2:
             fecha_fin = st.date_input(
                 "Hasta",
-                value=hoy,
-                max_value=hoy
+                value=datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
             )
-    elif "MTD" in periodo_seleccionado:
-        # Mes hasta la fecha (Month to Date)
-        fecha_inicio = hoy.replace(day=1)
-        fecha_fin = hoy
+    elif "Mes completo" in periodo_seleccionado:
+        # Mes completo seleccionado
+        fecha_inicio = datetime(año_sel, mes_sel, 1).date()
+        fecha_fin = datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
     elif "YTD" in periodo_seleccionado:
         # Año hasta la fecha (Year to Date)
-        fecha_inicio = datetime(año_actual, 1, 1).date()
-        fecha_fin = hoy
+        fecha_inicio = datetime(año_sel, 1, 1).date()
+        fecha_fin = datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
     else:
         # Es una semana (S1, S2, S3, S4, S5)
         for semana, (inicio, fin) in semanas_mes.items():
@@ -320,34 +339,11 @@ with st.sidebar:
                 break
         else:
             # Fallback
-            fecha_inicio = hoy.replace(day=1)
-            fecha_fin = hoy
+            fecha_inicio = datetime(año_sel, mes_sel, 1).date()
+            fecha_fin = datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
     
     # Mostrar rango seleccionado
     st.caption(f"📆 {fecha_inicio.strftime('%d/%m/%Y')} → {fecha_fin.strftime('%d/%m/%Y')}")
-    
-    # Selector de mes anterior (opcional)
-    with st.expander("📅 Ver otro mes", expanded=False):
-        col_mes, col_año = st.columns(2)
-        with col_mes:
-            mes_sel = st.selectbox(
-                "Mes",
-                options=list(range(1, 13)),
-                index=mes_actual - 1,
-                format_func=lambda x: datetime(2000, x, 1).strftime('%B').capitalize()
-            )
-        with col_año:
-            año_sel = st.selectbox(
-                "Año",
-                options=list(range(2020, año_actual + 1)),
-                index=año_actual - 2020
-            )
-        
-        if st.button("📊 Ver mes completo"):
-            from calendar import monthrange
-            fecha_inicio = datetime(año_sel, mes_sel, 1).date()
-            fecha_fin = datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
-            st.caption(f"📆 {fecha_inicio.strftime('%d/%m/%Y')} → {fecha_fin.strftime('%d/%m/%Y')}")
     
     st.divider()
 
