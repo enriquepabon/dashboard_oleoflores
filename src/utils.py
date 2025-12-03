@@ -130,10 +130,11 @@ UPSTREAM_COLUMNS_EXTENDED = UPSTREAM_COLUMNS + [
     "tanque_4",
 ]
 
-# Columnas para datos DOWNSTREAM (formato de refinería)
+# Columnas para datos DOWNSTREAM (formato completo)
 DOWNSTREAM_COLUMNS = [
     "fecha",
-    "refineria",
+    "producto",
+    "tipo",
     "produccion_me",
     "produccion_real",
     "cumplimiento",

@@ -197,7 +197,7 @@ def extract_downstream_data(xlsx, date_columns_upstream):
     Extrae los datos DOWNSTREAM del Excel.
     
     Returns:
-        list: Lista de diccionarios con los datos de refinería
+        list: Lista de diccionarios con los datos de refinería y productos
     """
     try:
         df = pd.read_excel(xlsx, sheet_name='DOWNSTREAM', header=None)
@@ -214,22 +214,28 @@ def extract_downstream_data(xlsx, date_columns_upstream):
     
     records = []
     
-    # Configuración de refinerías
-    refinerias = [
-        {'nombre': 'Refinería 1', 'fila_me': 1, 'fila_real': 2},
-        {'nombre': 'Refinería 2', 'fila_me': 9, 'fila_real': 10},
+    # Configuración completa de productos DOWNSTREAM
+    productos = [
+        {'nombre': 'Refinería 1', 'fila_me': 1, 'fila_real': 2, 'tipo': 'refineria'},
+        {'nombre': 'Refinería 2', 'fila_me': 9, 'fila_real': 10, 'tipo': 'refineria'},
+        {'nombre': 'Fracc 1', 'fila_me': 18, 'fila_real': 19, 'tipo': 'fraccionamiento'},
+        {'nombre': 'Fracc 2', 'fila_me': 24, 'fila_real': 25, 'tipo': 'fraccionamiento'},
+        {'nombre': 'Margarinas', 'fila_me': 31, 'fila_real': 32, 'tipo': 'producto'},
+        {'nombre': 'Total Oleína', 'fila_me': 40, 'fila_real': 41, 'tipo': 'total'},
     ]
     
-    for ref in refinerias:
+    for prod in productos:
         for col_idx, fecha in date_columns.items():
             try:
-                me = safe_float(df.iloc[ref['fila_me'], col_idx])
-                real = safe_float(df.iloc[ref['fila_real'], col_idx])
+                me = safe_float(df.iloc[prod['fila_me'], col_idx])
+                real = safe_float(df.iloc[prod['fila_real'], col_idx])
                 
-                if real > 0:
+                # Incluir si hay presupuesto o producción real
+                if me > 0 or real > 0:
                     records.append({
                         'fecha': fecha.strftime('%Y-%m-%d'),
-                        'refineria': ref['nombre'],
+                        'producto': prod['nombre'],
+                        'tipo': prod['tipo'],
                         'produccion_me': round(me, 2),
                         'produccion_real': round(real, 2),
                         'cumplimiento': round((real / me * 100) if me > 0 else 0, 2),
