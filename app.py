@@ -286,25 +286,84 @@ with st.sidebar:
 
     st.markdown("### 📤 Cargar Datos")
     
-    with st.expander("Subir archivos CSV/Excel", expanded=False):
+    # Cargador principal: Excel de Seguimiento Agroindustrial
+    with st.expander("📊 Cargar Seguimiento Mensual", expanded=True):
+        st.caption("Sube el archivo Excel de Seguimiento Agroindustria")
+        
+        uploaded_seguimiento = st.file_uploader(
+            "Archivo de Seguimiento",
+            type=['xlsx'],
+            key="seguimiento_upload",
+            help="Excel con formato: SEGUIMIENTO AGROINDUSTRIA [MES].xlsx",
+            label_visibility="collapsed"
+        )
+        
+        if uploaded_seguimiento is not None:
+            # Procesar el archivo de seguimiento
+            try:
+                from scripts.convert_excel_seguimiento import convert_excel_to_csv
+                import tempfile
+                import shutil
+                
+                # Guardar archivo temporal
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+                    tmp.write(uploaded_seguimiento.getvalue())
+                    tmp_path = tmp.name
+                
+                # Rutas de salida
+                output_upstream = "data/upstream.csv"
+                output_downstream = "data/downstream.csv"
+                
+                # Convertir
+                with st.spinner("🔄 Procesando Excel..."):
+                    df_up, df_down = convert_excel_to_csv(
+                        tmp_path, 
+                        output_upstream, 
+                        output_downstream
+                    )
+                
+                # Limpiar temporal
+                os.unlink(tmp_path)
+                
+                if df_up is not None and not df_up.empty:
+                    # Mostrar resumen
+                    st.success(f"✅ Datos actualizados!")
+                    st.metric("📊 Registros", f"{len(df_up)} días")
+                    
+                    # Mostrar rango de fechas
+                    fecha_min = df_up['fecha'].min()
+                    fecha_max = df_up['fecha'].max()
+                    st.caption(f"📅 {fecha_min} → {fecha_max}")
+                    
+                    # Limpiar caché para recargar datos
+                    st.cache_data.clear()
+                    st.rerun()
+                else:
+                    st.error("❌ No se pudieron extraer datos")
+                    
+            except Exception as e:
+                st.error(f"❌ Error al procesar: {str(e)}")
+    
+    # Cargador alternativo: archivos CSV individuales
+    with st.expander("📁 Cargar CSV individual", expanded=False):
         # Upload para Upstream
         uploaded_upstream = st.file_uploader(
-            "Datos Upstream",
-            type=['csv', 'xlsx'],
+            "Datos Upstream (CSV)",
+            type=['csv'],
             key="upstream_upload",
-            help="Archivo con datos de Campo/Extractora (RFF, CPO, TEA)"
+            help="CSV con formato del dashboard"
         )
         
         # Upload para Downstream
         uploaded_downstream = st.file_uploader(
-            "Datos Downstream",
-            type=['csv', 'xlsx'],
+            "Datos Downstream (CSV)",
+            type=['csv'],
             key="downstream_upload",
-            help="Archivo con datos de Refinería (Oleína, Margarinas, Mermas)"
+            help="CSV con datos de Refinería"
         )
         
         if uploaded_upstream or uploaded_downstream:
-            st.success("✅ Archivos cargados correctamente")
+            st.success("✅ Archivos cargados")
     
     st.divider()
     
