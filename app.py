@@ -30,7 +30,11 @@ from src.plots import (
     create_area_chart,
     create_bullet_chart,
     create_trend_line_chart,
-    create_empty_chart
+    create_empty_chart,
+    create_tank_chart,
+    get_semaforo_color,
+    format_table_with_semaforo,
+    create_quality_table
 )
 from src.utils import (
     COLORS, 
@@ -507,16 +511,228 @@ elif vista_seleccionada == "🌾 Upstream":
     st.markdown("Análisis de eficiencia en campo y extracción por zona.")
     
     if df_upstream is not None and not df_upstream.empty:
-        # Fila 1: Barras + Gauge TEA
-        col1, col2 = st.columns([2, 1])
+        # =====================================================================
+        # FILA 1: TABLAS CON SEMÁFOROS (RFF, CPO, TEA)
+        # =====================================================================
+        col1, col2, col3 = st.columns(3)
+        
+        # Agregar datos por zona
+        df_zona = df_upstream.groupby('zona').agg({
+            'rff_real': 'sum',
+            'rff_presupuesto': 'sum',
+            'cpo_real': 'sum',
+            'cpo_presupuesto': 'sum',
+            'tea_real': 'mean',
+            'tea_meta': 'mean'
+        }).reset_index()
         
         with col1:
-            st.subheader("📊 RFF por Zona: Real vs Meta")
-            df_zona = df_upstream.groupby('zona').agg({
-                'rff_real': 'sum',
-                'rff_presupuesto': 'sum'
-            }).reset_index()
+            st.subheader("📦 RFF Procesada")
+            # Crear tabla RFF con semáforos
+            df_rff = df_zona[['zona', 'rff_presupuesto', 'rff_real']].copy()
+            df_rff.columns = ['Planta', 'ME', 'Real']
+            df_rff['Dif'] = df_rff['Real'] - df_rff['ME']
+            df_rff['%'] = (df_rff['Real'] / df_rff['ME'] * 100)
+            df_rff['% Cumpl'] = df_rff['%'].apply(lambda x: f"{get_semaforo_color(x)} {x:.0f}%")
             
+            # Agregar fila TOTAL
+            total_rff = pd.DataFrame({
+                'Planta': ['**TOTAL**'],
+                'ME': [df_rff['ME'].sum()],
+                'Real': [df_rff['Real'].sum()],
+                'Dif': [df_rff['Dif'].sum()],
+                '%': [df_rff['Real'].sum() / df_rff['ME'].sum() * 100],
+            })
+            total_rff['% Cumpl'] = total_rff['%'].apply(lambda x: f"{get_semaforo_color(x)} {x:.0f}%")
+            
+            df_rff_display = pd.concat([df_rff[['Planta', 'ME', 'Real', 'Dif', '% Cumpl']], 
+                                        total_rff[['Planta', 'ME', 'Real', 'Dif', '% Cumpl']]])
+            df_rff_display['ME'] = df_rff_display['ME'].apply(lambda x: f"{x:,.0f}")
+            df_rff_display['Real'] = df_rff_display['Real'].apply(lambda x: f"{x:,.0f}")
+            df_rff_display['Dif'] = df_rff_display['Dif'].apply(lambda x: f"{x:+,.0f}")
+            
+            st.dataframe(df_rff_display, use_container_width=True, hide_index=True)
+        
+        with col2:
+            st.subheader("🛢️ CPO")
+            # Crear tabla CPO con semáforos
+            df_cpo = df_zona[['zona', 'cpo_presupuesto', 'cpo_real']].copy()
+            df_cpo.columns = ['Planta', 'CPO ME', 'CPO Real']
+            df_cpo['Dif TM'] = df_cpo['CPO Real'] - df_cpo['CPO ME']
+            df_cpo['%'] = (df_cpo['CPO Real'] / df_cpo['CPO ME'] * 100)
+            df_cpo['% Cumpl'] = df_cpo['%'].apply(lambda x: f"{get_semaforo_color(x)} {x:.0f}%")
+            
+            # Agregar fila TOTAL
+            total_cpo = pd.DataFrame({
+                'Planta': ['**TOTAL**'],
+                'CPO ME': [df_cpo['CPO ME'].sum()],
+                'CPO Real': [df_cpo['CPO Real'].sum()],
+                'Dif TM': [df_cpo['Dif TM'].sum()],
+                '%': [df_cpo['CPO Real'].sum() / df_cpo['CPO ME'].sum() * 100],
+            })
+            total_cpo['% Cumpl'] = total_cpo['%'].apply(lambda x: f"{get_semaforo_color(x)} {x:.0f}%")
+            
+            df_cpo_display = pd.concat([df_cpo[['Planta', 'CPO ME', 'CPO Real', 'Dif TM', '% Cumpl']], 
+                                        total_cpo[['Planta', 'CPO ME', 'CPO Real', 'Dif TM', '% Cumpl']]])
+            df_cpo_display['CPO ME'] = df_cpo_display['CPO ME'].apply(lambda x: f"{x:,.0f}")
+            df_cpo_display['CPO Real'] = df_cpo_display['CPO Real'].apply(lambda x: f"{x:,.0f}")
+            df_cpo_display['Dif TM'] = df_cpo_display['Dif TM'].apply(lambda x: f"{x:+,.0f}")
+            
+            st.dataframe(df_cpo_display, use_container_width=True, hide_index=True)
+        
+        with col3:
+            st.subheader("🎯 TAE%")
+            # Crear tabla TEA con semáforos
+            df_tea = df_zona[['zona', 'tea_meta', 'tea_real']].copy()
+            df_tea.columns = ['Planta', 'TEA ME', 'TEA Real']
+            df_tea['Dif'] = df_tea['TEA Real'] - df_tea['TEA ME']
+            # Para TEA, positivo es bueno
+            df_tea['Semáforo'] = df_tea['Dif'].apply(lambda x: '🟢' if x >= 0 else ('🟡' if x >= -0.5 else '🔴'))
+            df_tea['DIF'] = df_tea.apply(lambda x: f"{x['Semáforo']} {x['Dif']:+.1f}%", axis=1)
+            
+            # Agregar fila TOTAL
+            total_tea = pd.DataFrame({
+                'Planta': ['**TOTAL**'],
+                'TEA ME': [df_tea['TEA ME'].iloc[:-1].mean() if len(df_tea) > 1 else df_tea['TEA ME'].mean()],
+                'TEA Real': [df_tea['TEA Real'].iloc[:-1].mean() if len(df_tea) > 1 else df_tea['TEA Real'].mean()],
+            })
+            total_tea['Dif'] = total_tea['TEA Real'] - total_tea['TEA ME']
+            total_tea['Semáforo'] = total_tea['Dif'].apply(lambda x: '🟢' if x >= 0 else ('🟡' if x >= -0.5 else '🔴'))
+            total_tea['DIF'] = total_tea.apply(lambda x: f"{x['Semáforo']} {x['Dif']:+.1f}%", axis=1)
+            
+            df_tea_display = pd.concat([df_tea[['Planta', 'TEA ME', 'TEA Real', 'DIF']], 
+                                        total_tea[['Planta', 'TEA ME', 'TEA Real', 'DIF']]])
+            df_tea_display['TEA ME'] = df_tea_display['TEA ME'].apply(lambda x: f"{x:.1f}%")
+            df_tea_display['TEA Real'] = df_tea_display['TEA Real'].apply(lambda x: f"{x:.1f}%")
+            
+            st.dataframe(df_tea_display, use_container_width=True, hide_index=True)
+        
+        st.divider()
+        
+        # =====================================================================
+        # FILA 2: INVENTARIO CPO + TANQUES
+        # =====================================================================
+        st.subheader("🏗️ Inventario CPO y Niveles de Tanques")
+        
+        col_inv, col_tank = st.columns([1, 2])
+        
+        with col_inv:
+            # Tabla de inventario CPO
+            if 'inventario_cpo' in df_upstream.columns:
+                df_inv = df_upstream.groupby('zona').agg({
+                    'inventario_cpo': 'last'
+                }).reset_index()
+                df_inv.columns = ['Planta', 'TM']
+                df_inv['TM'] = df_inv['TM'].apply(lambda x: f"{x:,.0f}")
+                
+                # Total
+                total_inv = df_upstream.groupby('zona')['inventario_cpo'].last().sum()
+                df_inv_total = pd.DataFrame({'Planta': ['**TOTAL**'], 'TM': [f"{total_inv:,.0f}"]})
+                df_inv = pd.concat([df_inv, df_inv_total])
+                
+                st.markdown("**Inventario CPO por Planta**")
+                st.dataframe(df_inv, use_container_width=True, hide_index=True)
+        
+        with col_tank:
+            # Gráficos de tanques por zona
+            if all(col in df_upstream.columns for col in ['tanque_1', 'tanque_2']):
+                tabs_tanques = st.tabs(["Codazzi", "MLB", "A&G", "Sinú"])
+                
+                for i, zona in enumerate(["Codazzi", "MLB", "A&G", "Sinú"]):
+                    with tabs_tanques[i]:
+                        df_zona_tank = df_upstream[df_upstream['zona'] == zona].iloc[-1] if zona in df_upstream['zona'].values else None
+                        
+                        if df_zona_tank is not None:
+                            tanques = {}
+                            for j in range(1, 5):
+                                col_tank_name = f'tanque_{j}'
+                                if col_tank_name in df_upstream.columns and df_zona_tank[col_tank_name] > 0:
+                                    tanques[f'TK {j}'] = df_zona_tank[col_tank_name]
+                            
+                            if tanques:
+                                fig_tank = create_tank_chart(
+                                    tanques=tanques,
+                                    title=f"Tanques CPO - {zona}",
+                                    color_lleno="#F9A825" if zona != "Codazzi" else "#F9A825"
+                                )
+                                st.plotly_chart(fig_tank, use_container_width=True)
+                            else:
+                                st.info(f"No hay datos de tanques para {zona}")
+        
+        st.divider()
+        
+        # =====================================================================
+        # FILA 3: PARÁMETROS DE CALIDAD
+        # =====================================================================
+        if 'acidez' in df_upstream.columns:
+            st.subheader("🔬 Parámetros de Calidad del CPO")
+            
+            df_calidad = create_quality_table(df_upstream)
+            if not df_calidad.empty:
+                st.dataframe(df_calidad, use_container_width=True, hide_index=True)
+                st.caption("🟢 Óptimo | 🟡 Aceptable | 🔴 Fuera de rango")
+        
+        st.divider()
+        
+        # =====================================================================
+        # FILA 4: ALMENDRA Y KPO (si existen los datos)
+        # =====================================================================
+        if 'almendra_real' in df_upstream.columns:
+            st.subheader("🥜 Almendra y KPO")
+            
+            col_alm, col_kpo = st.columns(2)
+            
+            with col_alm:
+                # Solo Codazzi tiene datos de almendra
+                df_alm = df_upstream[df_upstream['almendra_real'] > 0].groupby('zona').agg({
+                    'almendra_presupuesto': 'sum',
+                    'almendra_real': 'sum'
+                }).reset_index()
+                
+                if not df_alm.empty:
+                    df_alm['Dif'] = df_alm['almendra_real'] - df_alm['almendra_presupuesto']
+                    df_alm['%'] = (df_alm['almendra_real'] / df_alm['almendra_presupuesto'] * 100)
+                    df_alm['% Cumpl'] = df_alm['%'].apply(lambda x: f"{get_semaforo_color(x)} {x:.0f}%")
+                    df_alm.columns = ['Producto', 'ME', 'Real', 'Dif', '%', '% Cumpl']
+                    df_alm['Producto'] = 'ALMENDRA'
+                    df_alm['ME'] = df_alm['ME'].apply(lambda x: f"{x:,.0f}")
+                    df_alm['Real'] = df_alm['Real'].apply(lambda x: f"{x:,.0f}")
+                    df_alm['Dif'] = df_alm['Dif'].apply(lambda x: f"{x:+,.0f}")
+                    
+                    st.dataframe(df_alm[['Producto', 'ME', 'Real', 'Dif', '% Cumpl']], 
+                                use_container_width=True, hide_index=True)
+            
+            with col_kpo:
+                df_kpo = df_upstream[df_upstream['kpo_real'] > 0].groupby('zona').agg({
+                    'kpo_presupuesto': 'sum',
+                    'kpo_real': 'sum',
+                    'extraccion_almendra': 'mean'
+                }).reset_index()
+                
+                if not df_kpo.empty:
+                    df_kpo['Dif'] = df_kpo['kpo_real'] - df_kpo['kpo_presupuesto']
+                    df_kpo['%'] = (df_kpo['kpo_real'] / df_kpo['kpo_presupuesto'] * 100)
+                    df_kpo['% Cumpl'] = df_kpo['%'].apply(lambda x: f"{get_semaforo_color(x)} {x:.0f}%")
+                    df_kpo['Extracción'] = df_kpo['extraccion_almendra'].apply(lambda x: f"{x:.1f}%")
+                    df_kpo.columns = ['Producto', 'ME', 'Real', 'Extracción %', 'Dif', '%', '% Cumpl', 'Extracción']
+                    df_kpo['Producto'] = 'KPO'
+                    
+                    st.markdown(f"**Extracción Almendra:** {df_kpo['Extracción'].iloc[0]}")
+                    df_kpo_display = df_kpo[['Producto', 'ME', 'Real', 'Dif', '% Cumpl']].copy()
+                    df_kpo_display['ME'] = df_kpo['ME'].apply(lambda x: f"{x:,.0f}")
+                    df_kpo_display['Real'] = df_kpo['Real'].apply(lambda x: f"{x:,.0f}")
+                    df_kpo_display['Dif'] = df_kpo['Dif'].apply(lambda x: f"{x:+,.0f}")
+                    st.dataframe(df_kpo_display, use_container_width=True, hide_index=True)
+        
+        st.divider()
+        
+        # =====================================================================
+        # FILA 5: GRÁFICOS ADICIONALES
+        # =====================================================================
+        col_graph1, col_graph2 = st.columns(2)
+        
+        with col_graph1:
+            st.subheader("📊 RFF por Zona: Real vs Meta")
             fig_barras = create_grouped_bar_chart(
                 df_zona,
                 x_column='zona',
@@ -526,7 +742,7 @@ elif vista_seleccionada == "🌾 Upstream":
             )
             st.plotly_chart(fig_barras, use_container_width=True)
         
-        with col2:
+        with col_graph2:
             st.subheader("🎯 TEA Promedio")
             tea_actual = df_upstream['tea_real'].mean()
             tea_meta = df_upstream['tea_meta'].mean()
@@ -538,11 +754,8 @@ elif vista_seleccionada == "🌾 Upstream":
             )
             st.plotly_chart(fig_gauge, use_container_width=True)
         
-        st.divider()
-        
-        # Fila 2: Heatmap de cosecha
+        # Heatmap
         st.subheader("🗓️ Mapa de Calor - Intensidad de Cosecha")
-        
         fig_heatmap = create_heatmap(
             df_upstream,
             x_column='fecha',
@@ -552,20 +765,15 @@ elif vista_seleccionada == "🌾 Upstream":
         )
         st.plotly_chart(fig_heatmap, use_container_width=True)
         
-        # Tabla resumen y exportación
+        # Exportación
         st.divider()
         col_tabla, col_export = st.columns([3, 1])
         
         with col_tabla:
-            with st.expander("📋 Ver datos detallados"):
-                st.dataframe(
-                    df_upstream[['fecha', 'zona', 'rff_real', 'rff_presupuesto', 'tea_real', 'cpo_real']],
-                    use_container_width=True,
-                    hide_index=True
-                )
+            with st.expander("📋 Ver todos los datos"):
+                st.dataframe(df_upstream, use_container_width=True, hide_index=True)
         
         with col_export:
-            # 6.4/6.5 - Botón de exportación
             df_export = prepare_export_data(df_upstream)
             csv_data, filename = export_to_csv(df_export, "upstream")
             if csv_data:
@@ -586,7 +794,108 @@ elif vista_seleccionada == "🏭 Downstream":
     st.markdown("Balance de masas, inventarios y flujo de producción.")
     
     if df_downstream is not None and not df_downstream.empty:
-        # Fila 1: Diagrama Sankey
+        # =====================================================================
+        # FILA 1: TABLA CON SEMÁFOROS + INVENTARIO
+        # =====================================================================
+        col_tabla, col_inv = st.columns([2, 1])
+        
+        with col_tabla:
+            st.subheader("🏭 Producción Downstream")
+            
+            # Agregar datos por refinería/producto
+            df_ref1 = df_downstream[df_downstream['refineria'] == 1].agg({
+                'cpo_entrada': 'sum',
+                'oleina_real': 'sum',
+                'oleina_presupuesto': 'sum',
+                'rbd_real': 'sum',
+                'rbd_presupuesto': 'sum',
+                'margarinas_real': 'sum',
+                'margarinas_presupuesto': 'sum'
+            })
+            
+            df_ref2 = df_downstream[df_downstream['refineria'] == 2].agg({
+                'cpo_entrada': 'sum',
+                'rbd_real': 'sum',
+                'rbd_presupuesto': 'sum'
+            })
+            
+            # Crear tabla de downstream
+            data_down = []
+            
+            # Refinería 1
+            pct_ref1 = (df_ref1['cpo_entrada'] / 8670 * 100) if 8670 > 0 else 0
+            data_down.append({
+                'Planta': 'REFINERIA 1',
+                'ME': f"{8670:,.0f}",
+                'Real': f"{df_ref1['cpo_entrada']:,.0f}",
+                'Dif': f"{df_ref1['cpo_entrada'] - 8670:+,.0f}",
+                '% Cumpl': f"{get_semaforo_color(pct_ref1)} {pct_ref1:.0f}%"
+            })
+            
+            # Refinería 2
+            pct_ref2 = (df_ref2['cpo_entrada'] / 770 * 100) if 770 > 0 else 0
+            data_down.append({
+                'Planta': 'REFINERIA 2',
+                'ME': f"{770:,.0f}",
+                'Real': f"{df_ref2['cpo_entrada']:,.0f}",
+                'Dif': f"{df_ref2['cpo_entrada'] - 770:+,.0f}",
+                '% Cumpl': f"{get_semaforo_color(pct_ref2)} {pct_ref2:.0f}%"
+            })
+            
+            # Oleína
+            pct_oleina = (df_ref1['oleina_real'] / df_ref1['oleina_presupuesto'] * 100) if df_ref1['oleina_presupuesto'] > 0 else 0
+            data_down.append({
+                'Planta': 'OLEINA',
+                'ME': f"{df_ref1['oleina_presupuesto']:,.0f}",
+                'Real': f"{df_ref1['oleina_real']:,.0f}",
+                'Dif': f"{df_ref1['oleina_real'] - df_ref1['oleina_presupuesto']:+,.0f}",
+                '% Cumpl': f"{get_semaforo_color(pct_oleina)} {pct_oleina:.0f}%"
+            })
+            
+            # Margarinas
+            pct_marg = (df_ref1['margarinas_real'] / df_ref1['margarinas_presupuesto'] * 100) if df_ref1['margarinas_presupuesto'] > 0 else 0
+            data_down.append({
+                'Planta': 'MARGARINAS',
+                'ME': f"{df_ref1['margarinas_presupuesto']:,.0f}",
+                'Real': f"{df_ref1['margarinas_real']:,.0f}",
+                'Dif': f"{df_ref1['margarinas_real'] - df_ref1['margarinas_presupuesto']:+,.0f}",
+                '% Cumpl': f"{get_semaforo_color(pct_marg)} {pct_marg:.0f}%"
+            })
+            
+            # Total
+            total_me = 8670 + 770 + df_ref1['oleina_presupuesto'] + df_ref1['margarinas_presupuesto']
+            total_real = df_ref1['cpo_entrada'] + df_ref2['cpo_entrada'] + df_ref1['oleina_real'] + df_ref1['margarinas_real']
+            pct_total = (total_real / total_me * 100) if total_me > 0 else 0
+            data_down.append({
+                'Planta': '**TOTAL**',
+                'ME': f"{total_me:,.0f}",
+                'Real': f"{total_real:,.0f}",
+                'Dif': f"{total_real - total_me:+,.0f}",
+                '% Cumpl': f"{get_semaforo_color(pct_total)} {pct_total:.0f}%"
+            })
+            
+            df_down_table = pd.DataFrame(data_down)
+            st.dataframe(df_down_table, use_container_width=True, hide_index=True)
+        
+        with col_inv:
+            st.subheader("📦 Inventario")
+            
+            # Inventario de productos terminados
+            if 'inventario_rbd' in df_downstream.columns:
+                last_inv = df_downstream.iloc[-1]
+                inv_data = [
+                    {'Producto': 'RBD', 'TM': f"{last_inv.get('inventario_rbd', 0):,.0f}"},
+                    {'Producto': 'Oleína', 'TM': f"{last_inv.get('inventario_oleina', 0):,.0f}"},
+                    {'Producto': 'Margarinas', 'TM': f"{last_inv.get('inventario_margarinas', 0):,.0f}"},
+                ]
+                df_inv_down = pd.DataFrame(inv_data)
+                st.dataframe(df_inv_down, use_container_width=True, hide_index=True)
+        
+        st.divider()
+        
+        # =====================================================================
+        # FILA 2: DIAGRAMA SANKEY
+        # =====================================================================
         st.subheader("🔀 Flujo de Masa - Refinería")
         
         fig_sankey = create_sankey_diagram(
@@ -597,7 +906,9 @@ elif vista_seleccionada == "🏭 Downstream":
         
         st.divider()
         
-        # Fila 2: Area Chart + Bullet Chart
+        # =====================================================================
+        # FILA 3: Area Chart + Bullet Chart
+        # =====================================================================
         col1, col2 = st.columns([1, 1])
         
         with col1:

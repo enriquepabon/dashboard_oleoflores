@@ -836,3 +836,195 @@ def create_empty_chart(message: str = "No hay datos disponibles") -> go.Figure:
     
     return fig
 
+
+# =============================================================================
+# GRÁFICO DE TANQUES (NIVELES DE INVENTARIO)
+# =============================================================================
+
+def create_tank_chart(
+    tanques: Dict[str, float],
+    capacidades: Dict[str, float] = None,
+    title: str = "Niveles de Tanques",
+    color_lleno: str = "#F9A825",
+    color_vacio: str = "#E0E0E0"
+) -> go.Figure:
+    """
+    Crea un gráfico de barras que simula tanques con niveles de llenado.
+    
+    Args:
+        tanques: Diccionario {nombre_tanque: nivel_actual}
+        capacidades: Diccionario {nombre_tanque: capacidad_maxima}
+        title: Título del gráfico
+        color_lleno: Color de la parte llena
+        color_vacio: Color de la parte vacía
+    
+    Returns:
+        Figura Plotly con gráfico de tanques
+    """
+    if capacidades is None:
+        # Capacidad por defecto: 1000 toneladas por tanque
+        capacidades = {k: 1000 for k in tanques.keys()}
+    
+    nombres = list(tanques.keys())
+    niveles = list(tanques.values())
+    caps = [capacidades.get(n, 1000) for n in nombres]
+    vacios = [c - n for c, n in zip(caps, niveles)]
+    
+    fig = go.Figure()
+    
+    # Parte llena (abajo)
+    fig.add_trace(go.Bar(
+        x=nombres,
+        y=niveles,
+        name="Nivel Actual",
+        marker_color=color_lleno,
+        text=[f"{n:,.0f}" for n in niveles],
+        textposition="inside",
+        textfont={"size": 12, "color": "white"},
+        hovertemplate="<b>%{x}</b><br>Nivel: %{y:,.0f} Ton<extra></extra>"
+    ))
+    
+    # Parte vacía (arriba)
+    fig.add_trace(go.Bar(
+        x=nombres,
+        y=vacios,
+        name="Capacidad Disponible",
+        marker_color=color_vacio,
+        hovertemplate="<b>%{x}</b><br>Disponible: %{y:,.0f} Ton<extra></extra>"
+    ))
+    
+    fig.update_layout(
+        barmode="stack",
+        showlegend=False,
+        yaxis_title="Toneladas",
+        xaxis_title=None,
+        height=300,
+        margin={"l": 40, "r": 20, "t": 40, "b": 40},
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)"
+    )
+    
+    if title:
+        fig.update_layout(title={"text": title, "font": {"size": 14}})
+    
+    return fig
+
+
+# =============================================================================
+# TABLA ESTILIZADA CON SEMÁFOROS (PARA STREAMLIT)
+# =============================================================================
+
+def get_semaforo_color(porcentaje: float, invertir: bool = False) -> str:
+    """
+    Retorna el color del semáforo según el porcentaje de cumplimiento.
+    
+    Args:
+        porcentaje: Porcentaje de cumplimiento (0-100+)
+        invertir: Si True, más alto es peor (ej: mermas)
+    
+    Returns:
+        Color emoji: 🔴 (rojo), 🟡 (amarillo), 🟢 (verde)
+    """
+    if invertir:
+        if porcentaje <= 95:
+            return "🟢"
+        elif porcentaje <= 105:
+            return "🟡"
+        else:
+            return "🔴"
+    else:
+        if porcentaje >= 100:
+            return "🟢"
+        elif porcentaje >= 95:
+            return "🟡"
+        else:
+            return "🔴"
+
+
+def format_table_with_semaforo(
+    df: pd.DataFrame,
+    col_real: str,
+    col_meta: str,
+    nombre_indicador: str = "Indicador"
+) -> pd.DataFrame:
+    """
+    Formatea un DataFrame agregando columnas de diferencia, % y semáforo.
+    
+    Args:
+        df: DataFrame con datos por zona/planta
+        col_real: Nombre de la columna con valores reales
+        col_meta: Nombre de la columna con valores meta
+        nombre_indicador: Nombre para la columna de indicador
+    
+    Returns:
+        DataFrame formateado con columnas adicionales
+    """
+    df = df.copy()
+    
+    # Calcular diferencia y porcentaje
+    df['Diferencia'] = df[col_real] - df[col_meta]
+    df['% Cumpl'] = (df[col_real] / df[col_meta] * 100).round(1)
+    df['Semáforo'] = df['% Cumpl'].apply(get_semaforo_color)
+    
+    # Formatear para mostrar
+    df['% Cumpl'] = df.apply(lambda x: f"{x['Semáforo']} {x['% Cumpl']:.0f}%", axis=1)
+    
+    return df
+
+
+# =============================================================================
+# TABLA DE CALIDAD (ACIDEZ, HUMEDAD, IMPUREZAS)
+# =============================================================================
+
+def create_quality_table(
+    df: pd.DataFrame,
+    zona_col: str = 'zona',
+    acidez_col: str = 'acidez',
+    humedad_col: str = 'humedad',
+    impurezas_col: str = 'impurezas'
+) -> pd.DataFrame:
+    """
+    Crea una tabla de parámetros de calidad por zona.
+    
+    Args:
+        df: DataFrame con datos
+        zona_col: Columna de zona
+        acidez_col: Columna de acidez
+        humedad_col: Columna de humedad
+        impurezas_col: Columna de impurezas
+    
+    Returns:
+        DataFrame con promedios de calidad por zona
+    """
+    # Filtrar solo zonas con datos de calidad
+    df_quality = df[df[acidez_col] > 0].copy()
+    
+    if df_quality.empty:
+        return pd.DataFrame()
+    
+    # Agrupar por zona
+    result = df_quality.groupby(zona_col).agg({
+        acidez_col: 'mean',
+        humedad_col: 'mean',
+        impurezas_col: 'mean'
+    }).round(2).reset_index()
+    
+    # Renombrar columnas
+    result.columns = ['Planta', 'Acidez %', 'Humedad %', 'Impurezas %']
+    
+    # Agregar semáforos de calidad
+    # Acidez: < 5% es bueno
+    result['Acidez %'] = result['Acidez %'].apply(
+        lambda x: f"{'🟢' if x < 4 else '🟡' if x < 5 else '🔴'} {x:.2f}%"
+    )
+    # Humedad: < 0.5% es bueno
+    result['Humedad %'] = result['Humedad %'].apply(
+        lambda x: f"{'🟢' if x < 0.3 else '🟡' if x < 0.5 else '🔴'} {x:.2f}%"
+    )
+    # Impurezas: < 0.1% es bueno
+    result['Impurezas %'] = result['Impurezas %'].apply(
+        lambda x: f"{'🟢' if x < 0.1 else '🟡' if x < 0.2 else '🔴'} {x:.2f}%"
+    )
+    
+    return result
+

@@ -113,6 +113,23 @@ UPSTREAM_COLUMNS = [
     "tea_meta",
 ]
 
+# Columnas extendidas para upstream (opcionales)
+UPSTREAM_COLUMNS_EXTENDED = UPSTREAM_COLUMNS + [
+    "almendra_real",
+    "almendra_presupuesto",
+    "kpo_real",
+    "kpo_presupuesto",
+    "extraccion_almendra",
+    "acidez",
+    "humedad",
+    "impurezas",
+    "inventario_cpo",
+    "tanque_1",
+    "tanque_2",
+    "tanque_3",
+    "tanque_4",
+]
+
 DOWNSTREAM_COLUMNS = [
     "fecha",
     "refineria",
@@ -124,6 +141,13 @@ DOWNSTREAM_COLUMNS = [
     "margarinas_real",
     "margarinas_presupuesto",
     "mermas",
+]
+
+# Columnas extendidas para downstream (opcionales)
+DOWNSTREAM_COLUMNS_EXTENDED = DOWNSTREAM_COLUMNS + [
+    "inventario_rbd",
+    "inventario_oleina",
+    "inventario_margarinas",
 ]
 
 # =============================================================================
