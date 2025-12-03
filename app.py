@@ -634,30 +634,49 @@ elif vista_seleccionada == "🌾 Upstream":
                 st.dataframe(df_inv, use_container_width=True, hide_index=True)
         
         with col_tank:
+            st.markdown("**Niveles de Tanques CPO**")
             # Gráficos de tanques por zona
             if all(col in df_upstream.columns for col in ['tanque_1', 'tanque_2']):
-                tabs_tanques = st.tabs(["Codazzi", "MLB", "A&G", "Sinú"])
+                tabs_tanques = st.tabs(["🌴 Codazzi", "🏭 MLB", "🌾 A&G", "🌿 Sinú"])
+                
+                # Colores por zona
+                colores_zona = {
+                    "Codazzi": "#F9A825",  # Dorado
+                    "MLB": "#1565C0",       # Azul
+                    "A&G": "#2E7D32",       # Verde
+                    "Sinú": "#EF6C00"       # Naranja
+                }
                 
                 for i, zona in enumerate(["Codazzi", "MLB", "A&G", "Sinú"]):
                     with tabs_tanques[i]:
-                        df_zona_tank = df_upstream[df_upstream['zona'] == zona].iloc[-1] if zona in df_upstream['zona'].values else None
-                        
-                        if df_zona_tank is not None:
+                        df_zona_filter = df_upstream[df_upstream['zona'] == zona]
+                        if not df_zona_filter.empty:
+                            df_zona_tank = df_zona_filter.iloc[-1]
+                            
+                            # Recopilar todos los tanques (incluyendo los con valor > 0)
                             tanques = {}
                             for j in range(1, 5):
                                 col_tank_name = f'tanque_{j}'
-                                if col_tank_name in df_upstream.columns and df_zona_tank[col_tank_name] > 0:
-                                    tanques[f'TK {j}'] = df_zona_tank[col_tank_name]
+                                if col_tank_name in df_upstream.columns:
+                                    valor = df_zona_tank[col_tank_name]
+                                    if valor > 0:
+                                        tanques[f'TK {j}'] = valor
                             
                             if tanques:
+                                # Mostrar info del inventario total
+                                total_tanques = sum(tanques.values())
+                                st.metric(f"Inventario Total {zona}", f"{total_tanques:,.0f} Ton")
+                                
                                 fig_tank = create_tank_chart(
                                     tanques=tanques,
-                                    title=f"Tanques CPO - {zona}",
-                                    color_lleno="#F9A825" if zona != "Codazzi" else "#F9A825"
+                                    title="",
+                                    color_lleno=colores_zona.get(zona, "#F9A825")
                                 )
                                 st.plotly_chart(fig_tank, use_container_width=True)
                             else:
-                                st.info(f"No hay datos de tanques para {zona}")
+                                st.info(f"Sin inventario en tanques para {zona}")
+                        else:
+                            st.warning(f"No hay datos para {zona}")
         
         st.divider()
         
@@ -675,54 +694,69 @@ elif vista_seleccionada == "🌾 Upstream":
         st.divider()
         
         # =====================================================================
-        # FILA 4: ALMENDRA Y KPO (si existen los datos)
+        # FILA 4: ALMENDRA Y KPO (Planta Expeller - Codazzi)
         # =====================================================================
         if 'almendra_real' in df_upstream.columns:
-            st.subheader("🥜 Almendra y KPO")
+            st.subheader("🥜 Almendra y KPO (Planta Expeller - Codazzi)")
             
-            col_alm, col_kpo = st.columns(2)
+            # Filtrar solo datos de Codazzi (única planta con expeller)
+            df_expeller = df_upstream[df_upstream['almendra_real'] > 0]
             
-            with col_alm:
-                # Solo Codazzi tiene datos de almendra
-                df_alm = df_upstream[df_upstream['almendra_real'] > 0].groupby('zona').agg({
-                    'almendra_presupuesto': 'sum',
-                    'almendra_real': 'sum'
-                }).reset_index()
+            if not df_expeller.empty:
+                col_tabla_alm, col_extraccion = st.columns([2, 1])
                 
-                if not df_alm.empty:
-                    df_alm['Dif'] = df_alm['almendra_real'] - df_alm['almendra_presupuesto']
-                    df_alm['%'] = (df_alm['almendra_real'] / df_alm['almendra_presupuesto'] * 100)
-                    df_alm['% Cumpl'] = df_alm['%'].apply(lambda x: f"{get_semaforo_color(x)} {x:.0f}%")
-                    df_alm.columns = ['Producto', 'ME', 'Real', 'Dif', '%', '% Cumpl']
-                    df_alm['Producto'] = 'ALMENDRA'
-                    df_alm['ME'] = df_alm['ME'].apply(lambda x: f"{x:,.0f}")
-                    df_alm['Real'] = df_alm['Real'].apply(lambda x: f"{x:,.0f}")
-                    df_alm['Dif'] = df_alm['Dif'].apply(lambda x: f"{x:+,.0f}")
+                with col_tabla_alm:
+                    # Calcular totales
+                    alm_real = df_expeller['almendra_real'].sum()
+                    alm_meta = df_expeller['almendra_presupuesto'].sum()
+                    kpo_real = df_expeller['kpo_real'].sum()
+                    kpo_meta = df_expeller['kpo_presupuesto'].sum()
+                    extraccion = df_expeller['extraccion_almendra'].mean()
                     
-                    st.dataframe(df_alm[['Producto', 'ME', 'Real', 'Dif', '% Cumpl']], 
-                                use_container_width=True, hide_index=True)
-            
-            with col_kpo:
-                df_kpo = df_upstream[df_upstream['kpo_real'] > 0].groupby('zona').agg({
-                    'kpo_presupuesto': 'sum',
-                    'kpo_real': 'sum',
-                    'extraccion_almendra': 'mean'
-                }).reset_index()
+                    # Crear tabla combinada
+                    data_expeller = []
+                    
+                    # Almendra
+                    pct_alm = (alm_real / alm_meta * 100) if alm_meta > 0 else 0
+                    data_expeller.append({
+                        'Producto': 'ALMENDRA',
+                        'ME': f"{alm_meta:,.0f}",
+                        'Real': f"{alm_real:,.0f}",
+                        'Dif': f"{alm_real - alm_meta:+,.0f}",
+                        '% Cumpl': f"{get_semaforo_color(pct_alm)} {pct_alm:.0f}%"
+                    })
+                    
+                    # KPO
+                    pct_kpo = (kpo_real / kpo_meta * 100) if kpo_meta > 0 else 0
+                    data_expeller.append({
+                        'Producto': 'KPO',
+                        'ME': f"{kpo_meta:,.0f}",
+                        'Real': f"{kpo_real:,.0f}",
+                        'Dif': f"{kpo_real - kpo_meta:+,.0f}",
+                        '% Cumpl': f"{get_semaforo_color(pct_kpo)} {pct_kpo:.0f}%"
+                    })
+                    
+                    # Extracción
+                    pct_ext = (extraccion / 41.0 * 100) if extraccion > 0 else 0
+                    data_expeller.append({
+                        'Producto': 'EXTRACCIÓN',
+                        'ME': "41.0%",
+                        'Real': f"{extraccion:.1f}%",
+                        'Dif': f"{extraccion - 41.0:+.1f}%",
+                        '% Cumpl': f"{get_semaforo_color(pct_ext)} {pct_ext:.0f}%"
+                    })
+                    
+                    df_expeller_table = pd.DataFrame(data_expeller)
+                    st.dataframe(df_expeller_table, use_container_width=True, hide_index=True)
                 
-                if not df_kpo.empty:
-                    df_kpo['Dif'] = df_kpo['kpo_real'] - df_kpo['kpo_presupuesto']
-                    df_kpo['%'] = (df_kpo['kpo_real'] / df_kpo['kpo_presupuesto'] * 100)
-                    df_kpo['% Cumpl'] = df_kpo['%'].apply(lambda x: f"{get_semaforo_color(x)} {x:.0f}%")
-                    df_kpo['Extracción'] = df_kpo['extraccion_almendra'].apply(lambda x: f"{x:.1f}%")
-                    df_kpo.columns = ['Producto', 'ME', 'Real', 'Extracción %', 'Dif', '%', '% Cumpl', 'Extracción']
-                    df_kpo['Producto'] = 'KPO'
-                    
-                    st.markdown(f"**Extracción Almendra:** {df_kpo['Extracción'].iloc[0]}")
-                    df_kpo_display = df_kpo[['Producto', 'ME', 'Real', 'Dif', '% Cumpl']].copy()
-                    df_kpo_display['ME'] = df_kpo['ME'].apply(lambda x: f"{x:,.0f}")
-                    df_kpo_display['Real'] = df_kpo['Real'].apply(lambda x: f"{x:,.0f}")
-                    df_kpo_display['Dif'] = df_kpo['Dif'].apply(lambda x: f"{x:+,.0f}")
-                    st.dataframe(df_kpo_display, use_container_width=True, hide_index=True)
+                with col_extraccion:
+                    # Mostrar métricas de extracción
+                    promedio_diario = alm_real / len(df_expeller) if len(df_expeller) > 0 else 0
+                    st.metric("📊 Promedio Diario", f"{promedio_diario:,.1f} Ton")
+                    st.metric("🎯 % Extracción", f"{extraccion:.2f}%", 
+                             delta=f"{extraccion - 41.0:+.2f}% vs meta")
+            else:
+                st.info("📭 No hay datos de Almendra/KPO en el período seleccionado")
         
         st.divider()
         
