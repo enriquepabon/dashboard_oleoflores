@@ -472,13 +472,13 @@ if vista_seleccionada == "🏠 Resumen Ejecutivo":
         total_cpo = df_upstream['cpo_real'].sum()
         total_cpo_ppto = df_upstream['cpo_presupuesto'].sum()
         
-        # Margarinas (si hay datos downstream)
+        # Refinería (si hay datos downstream)
         if df_downstream is not None and not df_downstream.empty:
-            total_margarinas = df_downstream['margarinas_real'].sum()
-            total_marg_ppto = df_downstream['margarinas_presupuesto'].sum()
+            total_refineria = df_downstream['produccion_real'].sum()
+            total_ref_ppto = df_downstream['produccion_me'].sum()
         else:
-            total_margarinas = 0
-            total_marg_ppto = 0
+            total_refineria = 0
+            total_ref_ppto = 0
         
         with col1:
             delta_rff = total_rff - total_rff_ppto
@@ -505,11 +505,11 @@ if vista_seleccionada == "🏠 Resumen Ejecutivo":
             )
         
         with col4:
-            delta_marg = total_margarinas - total_marg_ppto
+            delta_ref = total_refineria - total_ref_ppto
             st.metric(
-                label="🧈 Margarinas",
-                value=f"{total_margarinas:,.0f}",
-                delta=f"{delta_marg:+,.0f} vs Ppto"
+                label="🏭 Refinería",
+                value=f"{total_refineria:,.0f}",
+                delta=f"{delta_ref:+,.0f} vs Ppto"
             )
         
         st.divider()
