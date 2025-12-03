@@ -234,3 +234,245 @@ def get_flecha_variacion(variacion, invertir=False):
     
     return "↑" if es_positivo else "↓"
 
+
+# =============================================================================
+# 6.1 - VALIDACIÓN DE RANGOS DE DATOS
+# =============================================================================
+
+# Configuración de rangos válidos para alertas
+DATA_RANGES = {
+    "tea_real": {
+        "min": 0,
+        "max": 35,
+        "nombre": "TEA",
+        "unidad": "%",
+        "mensaje_bajo": "TEA muy baja - posible problema de extracción",
+        "mensaje_alto": "TEA fuera de rango técnico esperado"
+    },
+    "tea_meta": {
+        "min": 0,
+        "max": 35,
+        "nombre": "Meta TEA",
+        "unidad": "%"
+    },
+    "rff_real": {
+        "min": 0,
+        "max": None,  # Sin límite superior
+        "nombre": "RFF",
+        "unidad": "Ton",
+        "mensaje_bajo": "Valor de RFF no puede ser negativo"
+    },
+    "cpo_real": {
+        "min": 0,
+        "max": None,
+        "nombre": "CPO",
+        "unidad": "Ton"
+    },
+    "mermas": {
+        "min": 0,
+        "max": None,
+        "nombre": "Mermas",
+        "unidad": "Ton",
+        "alerta_porcentaje": 15,  # Alerta si mermas > 15% del CPO entrada
+        "mensaje_alto": "Mermas excesivas detectadas"
+    }
+}
+
+
+def validate_data_ranges(df, dataset_type="upstream"):
+    """
+    Valida que los datos estén dentro de rangos lógicos.
+    
+    Args:
+        df: DataFrame a validar
+        dataset_type: 'upstream' o 'downstream'
+    
+    Returns:
+        Lista de diccionarios con alertas encontradas:
+        [{"tipo": "warning"|"error", "columna": str, "mensaje": str, "valores": list}]
+    """
+    alertas = []
+    
+    if df is None or df.empty:
+        return alertas
+    
+    # Validaciones específicas por tipo de dataset
+    if dataset_type == "upstream":
+        # Validar TEA
+        if 'tea_real' in df.columns:
+            tea_config = DATA_RANGES.get("tea_real", {})
+            
+            # TEA negativa
+            tea_negativa = df[df['tea_real'] < 0]
+            if not tea_negativa.empty:
+                alertas.append({
+                    "tipo": "error",
+                    "columna": "tea_real",
+                    "mensaje": "🚨 TEA con valores negativos detectados",
+                    "detalle": f"{len(tea_negativa)} registros con TEA < 0",
+                    "valores": tea_negativa['tea_real'].tolist()[:5]
+                })
+            
+            # TEA fuera de rango (> 35%)
+            tea_alta = df[df['tea_real'] > 35]
+            if not tea_alta.empty:
+                alertas.append({
+                    "tipo": "error",
+                    "columna": "tea_real",
+                    "mensaje": "🚨 TEA fuera de rango técnico (>35%)",
+                    "detalle": f"{len(tea_alta)} registros con TEA > 35%",
+                    "valores": tea_alta['tea_real'].tolist()[:5]
+                })
+            
+            # TEA muy baja (< 15%) - advertencia
+            tea_baja = df[(df['tea_real'] > 0) & (df['tea_real'] < 15)]
+            if not tea_baja.empty:
+                alertas.append({
+                    "tipo": "warning",
+                    "columna": "tea_real",
+                    "mensaje": "⚠️ TEA inusualmente baja (<15%)",
+                    "detalle": f"{len(tea_baja)} registros - verificar proceso de extracción",
+                    "valores": tea_baja['tea_real'].tolist()[:5]
+                })
+        
+        # Validar RFF negativo
+        if 'rff_real' in df.columns:
+            rff_negativa = df[df['rff_real'] < 0]
+            if not rff_negativa.empty:
+                alertas.append({
+                    "tipo": "error",
+                    "columna": "rff_real",
+                    "mensaje": "🚨 RFF con valores negativos",
+                    "detalle": f"{len(rff_negativa)} registros inválidos",
+                    "valores": rff_negativa['rff_real'].tolist()[:5]
+                })
+        
+        # Validar CPO > RFF (imposible físicamente)
+        if 'cpo_real' in df.columns and 'rff_real' in df.columns:
+            cpo_mayor_rff = df[df['cpo_real'] > df['rff_real']]
+            if not cpo_mayor_rff.empty:
+                alertas.append({
+                    "tipo": "error",
+                    "columna": "cpo_real",
+                    "mensaje": "🚨 CPO mayor que RFF (físicamente imposible)",
+                    "detalle": f"{len(cpo_mayor_rff)} registros con inconsistencia",
+                    "valores": []
+                })
+    
+    elif dataset_type == "downstream":
+        # Validar mermas excesivas
+        if 'mermas' in df.columns and 'cpo_entrada' in df.columns:
+            df_temp = df.copy()
+            df_temp['pct_mermas'] = (df_temp['mermas'] / df_temp['cpo_entrada'] * 100).fillna(0)
+            mermas_altas = df_temp[df_temp['pct_mermas'] > 15]
+            
+            if not mermas_altas.empty:
+                alertas.append({
+                    "tipo": "warning",
+                    "columna": "mermas",
+                    "mensaje": "⚠️ Mermas superiores al 15% del CPO entrada",
+                    "detalle": f"{len(mermas_altas)} registros con mermas elevadas",
+                    "valores": mermas_altas['pct_mermas'].round(1).tolist()[:5]
+                })
+        
+        # Validar valores negativos
+        for col in ['oleina_real', 'rbd_real', 'margarinas_real', 'mermas']:
+            if col in df.columns:
+                negativos = df[df[col] < 0]
+                if not negativos.empty:
+                    alertas.append({
+                        "tipo": "error",
+                        "columna": col,
+                        "mensaje": f"🚨 {col.replace('_', ' ').title()} con valores negativos",
+                        "detalle": f"{len(negativos)} registros inválidos",
+                        "valores": negativos[col].tolist()[:5]
+                    })
+    
+    return alertas
+
+
+def get_alert_summary(alertas):
+    """
+    Genera un resumen de alertas para mostrar en el dashboard.
+    
+    Args:
+        alertas: Lista de alertas de validate_data_ranges()
+    
+    Returns:
+        dict con conteo por tipo y lista formateada
+    """
+    if not alertas:
+        return {
+            "total": 0,
+            "errores": 0,
+            "advertencias": 0,
+            "lista": []
+        }
+    
+    errores = [a for a in alertas if a["tipo"] == "error"]
+    advertencias = [a for a in alertas if a["tipo"] == "warning"]
+    
+    return {
+        "total": len(alertas),
+        "errores": len(errores),
+        "advertencias": len(advertencias),
+        "lista": alertas
+    }
+
+
+# =============================================================================
+# 6.4 - EXPORTACIÓN DE DATOS
+# =============================================================================
+
+def export_to_csv(df, filename_prefix="datos"):
+    """
+    Prepara un DataFrame para exportación a CSV.
+    
+    Args:
+        df: DataFrame a exportar
+        filename_prefix: Prefijo para el nombre del archivo
+    
+    Returns:
+        tuple: (csv_string, filename_sugerido)
+    """
+    from datetime import datetime
+    
+    if df is None or df.empty:
+        return None, None
+    
+    # Generar nombre de archivo con timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{filename_prefix}_{timestamp}.csv"
+    
+    # Convertir a CSV
+    csv_string = df.to_csv(index=False)
+    
+    return csv_string, filename
+
+
+def prepare_export_data(df, include_variations=True):
+    """
+    Prepara datos para exportación, incluyendo columnas calculadas.
+    
+    Args:
+        df: DataFrame original
+        include_variations: Si incluir columnas de variación
+    
+    Returns:
+        DataFrame preparado para exportación
+    """
+    if df is None or df.empty:
+        return df
+    
+    df_export = df.copy()
+    
+    # Formatear fechas si existen
+    if 'fecha' in df_export.columns:
+        df_export['fecha'] = df_export['fecha'].dt.strftime('%Y-%m-%d')
+    
+    # Redondear valores numéricos
+    numeric_cols = df_export.select_dtypes(include=['float64']).columns
+    for col in numeric_cols:
+        df_export[col] = df_export[col].round(2)
+    
+    return df_export

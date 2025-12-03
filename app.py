@@ -32,7 +32,15 @@ from src.plots import (
     create_trend_line_chart,
     create_empty_chart
 )
-from src.utils import COLORS, ZONAS, KPIS_CONFIG
+from src.utils import (
+    COLORS, 
+    ZONAS, 
+    KPIS_CONFIG,
+    validate_data_ranges,
+    get_alert_summary,
+    export_to_csv,
+    prepare_export_data
+)
 
 # =============================================================================
 # 4.1 - CONFIGURACIÓN DE PÁGINA
@@ -336,6 +344,15 @@ if df_downstream is not None:
     df_downstream = filter_by_date_range(df_downstream, fecha_inicio, fecha_fin)
 
 # =============================================================================
+# 6.1/6.2/6.3 - VALIDACIÓN DE DATOS Y ALERTAS
+# =============================================================================
+
+# Validar datos y recolectar alertas
+alertas_upstream = validate_data_ranges(df_upstream, "upstream") if df_upstream is not None else []
+alertas_downstream = validate_data_ranges(df_downstream, "downstream") if df_downstream is not None else []
+todas_alertas = alertas_upstream + alertas_downstream
+
+# =============================================================================
 # 4.7 - ÁREA PRINCIPAL: ROUTING DE VISTAS
 # =============================================================================
 
@@ -347,6 +364,17 @@ if error_upstream:
     st.error(f"⚠️ Error cargando datos Upstream: {error_upstream}")
 if error_downstream:
     st.error(f"⚠️ Error cargando datos Downstream: {error_downstream}")
+
+# Mostrar alertas de validación de datos
+if todas_alertas:
+    resumen_alertas = get_alert_summary(todas_alertas)
+    
+    with st.expander(f"🚨 **{resumen_alertas['total']} Alertas Detectadas** ({resumen_alertas['errores']} errores, {resumen_alertas['advertencias']} advertencias)", expanded=True):
+        for alerta in todas_alertas:
+            if alerta["tipo"] == "error":
+                st.error(f"{alerta['mensaje']}\n\n{alerta['detalle']}")
+            else:
+                st.warning(f"{alerta['mensaje']}\n\n{alerta['detalle']}")
 
 # Indicador de filtros activos
 filtros_activos = []
@@ -444,6 +472,31 @@ if vista_seleccionada == "🏠 Resumen Ejecutivo":
         )
         st.plotly_chart(fig_tendencia, use_container_width=True)
         
+        # 6.4/6.5 - Botón de exportación en Resumen
+        st.divider()
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col2:
+            df_export_up = prepare_export_data(df_upstream)
+            csv_up, fn_up = export_to_csv(df_export_up, "resumen_upstream")
+            if csv_up:
+                st.download_button(
+                    label="📥 Upstream CSV",
+                    data=csv_up,
+                    file_name=fn_up,
+                    mime="text/csv"
+                )
+        with col3:
+            if df_downstream is not None:
+                df_export_down = prepare_export_data(df_downstream)
+                csv_down, fn_down = export_to_csv(df_export_down, "resumen_downstream")
+                if csv_down:
+                    st.download_button(
+                        label="📥 Downstream CSV",
+                        data=csv_down,
+                        file_name=fn_down,
+                        mime="text/csv"
+                    )
+        
     else:
         st.info("📭 No hay datos disponibles. Carga un archivo CSV/Excel para comenzar.")
 
@@ -499,13 +552,30 @@ elif vista_seleccionada == "🌾 Upstream":
         )
         st.plotly_chart(fig_heatmap, use_container_width=True)
         
-        # Tabla resumen
-        with st.expander("📋 Ver datos detallados"):
-            st.dataframe(
-                df_upstream[['fecha', 'zona', 'rff_real', 'rff_presupuesto', 'tea_real', 'cpo_real']],
-                use_container_width=True,
-                hide_index=True
-            )
+        # Tabla resumen y exportación
+        st.divider()
+        col_tabla, col_export = st.columns([3, 1])
+        
+        with col_tabla:
+            with st.expander("📋 Ver datos detallados"):
+                st.dataframe(
+                    df_upstream[['fecha', 'zona', 'rff_real', 'rff_presupuesto', 'tea_real', 'cpo_real']],
+                    use_container_width=True,
+                    hide_index=True
+                )
+        
+        with col_export:
+            # 6.4/6.5 - Botón de exportación
+            df_export = prepare_export_data(df_upstream)
+            csv_data, filename = export_to_csv(df_export, "upstream")
+            if csv_data:
+                st.download_button(
+                    label="📥 Exportar CSV",
+                    data=csv_data,
+                    file_name=filename,
+                    mime="text/csv",
+                    help="Descargar datos filtrados en formato CSV"
+                )
     else:
         st.info("📭 No hay datos de Upstream disponibles.")
 
@@ -573,13 +643,30 @@ elif vista_seleccionada == "🏭 Downstream":
             )
             st.plotly_chart(fig_bullet, use_container_width=True)
         
-        # Tabla resumen
-        with st.expander("📋 Ver datos detallados"):
-            st.dataframe(
-                df_downstream,
-                use_container_width=True,
-                hide_index=True
-            )
+        # Tabla resumen y exportación
+        st.divider()
+        col_tabla, col_export = st.columns([3, 1])
+        
+        with col_tabla:
+            with st.expander("📋 Ver datos detallados"):
+                st.dataframe(
+                    df_downstream,
+                    use_container_width=True,
+                    hide_index=True
+                )
+        
+        with col_export:
+            # 6.4/6.5 - Botón de exportación
+            df_export = prepare_export_data(df_downstream)
+            csv_data, filename = export_to_csv(df_export, "downstream")
+            if csv_data:
+                st.download_button(
+                    label="📥 Exportar CSV",
+                    data=csv_data,
+                    file_name=filename,
+                    mime="text/csv",
+                    help="Descargar datos filtrados en formato CSV"
+                )
     else:
         st.info("📭 No hay datos de Downstream disponibles.")
 

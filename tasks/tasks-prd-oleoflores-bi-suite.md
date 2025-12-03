@@ -80,14 +80,14 @@
   - [x] 5.6 Agregar Area Chart de inventarios y Bullet Chart de cumplimiento en vista Downstream
   - [x] 5.7 Asegurar que los filtros de fecha y zona se apliquen correctamente a todas las visualizaciones
 
-- [ ] 6.0 Sistema de Alertas, Exportación y Validaciones Finales
-  - [ ] 6.1 Crear función `validate_data_ranges()` en `utils.py` que detecte valores fuera de rango (TEA>35%, valores negativos, etc.)
-  - [ ] 6.2 Implementar componente visual de alerta usando `st.warning()` y `st.error()` con íconos distintivos
-  - [ ] 6.3 Mostrar alertas en el dashboard cuando se detecten valores anómalos con descripción del problema
-  - [ ] 6.4 Crear función `export_to_csv()` que genere archivo CSV con los datos filtrados actuales
-  - [ ] 6.5 Agregar botón de descarga en cada vista usando `st.download_button()` para exportar datos
-  - [ ] 6.6 Realizar pruebas de integración: cargar datos reales, verificar filtros, validar visualizaciones
-  - [ ] 6.7 Documentar en README.md las instrucciones de uso, estructura de archivos esperada y solución de problemas comunes
+- [x] 6.0 Sistema de Alertas, Exportación y Validaciones Finales
+  - [x] 6.1 Crear función `validate_data_ranges()` en `utils.py` que detecte valores fuera de rango (TEA>35%, valores negativos, etc.)
+  - [x] 6.2 Implementar componente visual de alerta usando `st.warning()` y `st.error()` con íconos distintivos
+  - [x] 6.3 Mostrar alertas en el dashboard cuando se detecten valores anómalos con descripción del problema
+  - [x] 6.4 Crear función `export_to_csv()` que genere archivo CSV con los datos filtrados actuales
+  - [x] 6.5 Agregar botón de descarga en cada vista usando `st.download_button()` para exportar datos
+  - [x] 6.6 Realizar pruebas de integración: cargar datos reales, verificar filtros, validar visualizaciones
+  - [x] 6.7 Documentar en README.md las instrucciones de uso, estructura de archivos esperada y solución de problemas comunes
 
 ---
 
@@ -100,8 +100,8 @@
 | 3.0 Módulo Visualizaciones | 8 | 8 | ✅ Completada |
 | 4.0 Interfaz Principal | 7 | 7 | ✅ Completada |
 | 5.0 Vistas Específicas | 7 | 7 | ✅ Completada |
-| 6.0 Alertas y Exportación | 7 | 0 | ⏳ Pendiente |
-| **TOTAL** | **44** | **37** | **84%** |
+| 6.0 Alertas y Exportación | 7 | 7 | ✅ Completada |
+| **TOTAL** | **44** | **44** | **100%** ✅ |
 
 ---
 
