@@ -215,43 +215,139 @@ with st.sidebar:
 
     st.markdown("### 📅 Período")
     
-    # Opciones predefinidas de período
-    periodo_opciones = {
-        "Última Semana": 7,
-        "Últimos 15 días": 15,
-        "Último Mes": 30,
-        "Último Trimestre": 90,
-        "YTD (Año actual)": 365,
-        "Personalizado": 0
-    }
+    # Función para calcular semanas del mes
+    def calcular_semanas_mes(año, mes):
+        """
+        Calcula las semanas del mes según la lógica:
+        - S1: Del 1ro del mes al primer domingo
+        - S2-S4: De lunes a domingo
+        - S5: Del último lunes al fin del mes (si aplica)
+        """
+        from calendar import monthrange
+        
+        # Primer día del mes
+        primer_dia = datetime(año, mes, 1).date()
+        # Último día del mes
+        ultimo_dia = datetime(año, mes, monthrange(año, mes)[1]).date()
+        
+        semanas = {}
+        
+        # S1: Del 1ro al primer domingo
+        dia_actual = primer_dia
+        # Encontrar el primer domingo (weekday() = 6)
+        while dia_actual.weekday() != 6 and dia_actual <= ultimo_dia:
+            dia_actual += timedelta(days=1)
+        
+        if dia_actual <= ultimo_dia:
+            semanas['S1'] = (primer_dia, dia_actual)
+            dia_actual += timedelta(days=1)  # Lunes siguiente
+        else:
+            semanas['S1'] = (primer_dia, ultimo_dia)
+            return semanas
+        
+        # S2, S3, S4, S5...
+        num_semana = 2
+        while dia_actual <= ultimo_dia and num_semana <= 5:
+            inicio_semana = dia_actual
+            # Buscar el domingo o fin de mes
+            while dia_actual.weekday() != 6 and dia_actual < ultimo_dia:
+                dia_actual += timedelta(days=1)
+            
+            semanas[f'S{num_semana}'] = (inicio_semana, dia_actual)
+            dia_actual += timedelta(days=1)
+            num_semana += 1
+        
+        return semanas
+    
+    # Fecha actual
+    hoy = datetime.now().date()
+    año_actual = hoy.year
+    mes_actual = hoy.month
+    
+    # Calcular semanas del mes actual
+    semanas_mes = calcular_semanas_mes(año_actual, mes_actual)
+    
+    # Selector de mes (para ver meses anteriores)
+    meses_disponibles = []
+    for i in range(12):
+        fecha_mes = hoy.replace(day=1) - timedelta(days=i*30)
+        meses_disponibles.append(fecha_mes.strftime('%B %Y').capitalize())
+    
+    # Crear opciones de período
+    opciones_periodo = ["📆 Mes (MTD)", "📅 Año (YTD)"]
+    
+    # Agregar semanas del mes actual
+    for semana, (inicio, fin) in semanas_mes.items():
+        opciones_periodo.insert(len(opciones_periodo)-2, f"📊 {semana} ({inicio.day}-{fin.day} {inicio.strftime('%b')})")
+    
+    opciones_periodo.append("🔧 Personalizado")
     
     periodo_seleccionado = st.selectbox(
         "Rango de fechas",
-        options=list(periodo_opciones.keys()),
-        index=0
+        options=opciones_periodo,
+        index=0  # Por defecto: Mes (MTD)
     )
     
-    # Calcular fechas según período
-    fecha_fin = datetime.now().date()
-    
-    if periodo_seleccionado == "Personalizado":
+    # Calcular fechas según período seleccionado
+    if "Personalizado" in periodo_seleccionado:
         col_fecha1, col_fecha2 = st.columns(2)
         with col_fecha1:
             fecha_inicio = st.date_input(
                 "Desde",
-                value=fecha_fin - timedelta(days=30),
-                max_value=fecha_fin
+                value=hoy.replace(day=1),
+                max_value=hoy
             )
         with col_fecha2:
             fecha_fin = st.date_input(
                 "Hasta",
-                value=fecha_fin,
-                max_value=fecha_fin
+                value=hoy,
+                max_value=hoy
             )
+    elif "MTD" in periodo_seleccionado:
+        # Mes hasta la fecha (Month to Date)
+        fecha_inicio = hoy.replace(day=1)
+        fecha_fin = hoy
+    elif "YTD" in periodo_seleccionado:
+        # Año hasta la fecha (Year to Date)
+        fecha_inicio = datetime(año_actual, 1, 1).date()
+        fecha_fin = hoy
     else:
-        dias = periodo_opciones[periodo_seleccionado]
-        fecha_inicio = fecha_fin - timedelta(days=dias)
-        st.caption(f"📆 {fecha_inicio.strftime('%d/%m/%Y')} - {fecha_fin.strftime('%d/%m/%Y')}")
+        # Es una semana (S1, S2, S3, S4, S5)
+        for semana, (inicio, fin) in semanas_mes.items():
+            if semana in periodo_seleccionado:
+                fecha_inicio = inicio
+                fecha_fin = fin
+                break
+        else:
+            # Fallback
+            fecha_inicio = hoy.replace(day=1)
+            fecha_fin = hoy
+    
+    # Mostrar rango seleccionado
+    st.caption(f"📆 {fecha_inicio.strftime('%d/%m/%Y')} → {fecha_fin.strftime('%d/%m/%Y')}")
+    
+    # Selector de mes anterior (opcional)
+    with st.expander("📅 Ver otro mes", expanded=False):
+        col_mes, col_año = st.columns(2)
+        with col_mes:
+            mes_sel = st.selectbox(
+                "Mes",
+                options=list(range(1, 13)),
+                index=mes_actual - 1,
+                format_func=lambda x: datetime(2000, x, 1).strftime('%B').capitalize()
+            )
+        with col_año:
+            año_sel = st.selectbox(
+                "Año",
+                options=list(range(2020, año_actual + 1)),
+                index=año_actual - 2020
+            )
+        
+        if st.button("📊 Ver mes completo"):
+            from calendar import monthrange
+            fecha_inicio = datetime(año_sel, mes_sel, 1).date()
+            fecha_fin = datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
+            st.caption(f"📆 {fecha_inicio.strftime('%d/%m/%Y')} → {fecha_fin.strftime('%d/%m/%Y')}")
     
     st.divider()
 
