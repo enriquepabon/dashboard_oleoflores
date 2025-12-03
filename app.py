@@ -559,10 +559,15 @@ if vista_seleccionada == "🏠 Resumen Ejecutivo":
         # Calcular KPIs
         total_rff = df_upstream['rff_real'].sum()
         total_rff_ppto = df_upstream['rff_presupuesto'].sum()
-        tea_promedio = df_upstream['tea_real'].mean()
-        tea_meta = df_upstream['tea_meta'].mean()
         total_cpo = df_upstream['cpo_real'].sum()
         total_cpo_ppto = df_upstream['cpo_presupuesto'].sum()
+        
+        # TEA = CPO / RFF × 100 (cálculo correcto, no promedio)
+        tea_real = (total_cpo / total_rff * 100) if total_rff > 0 else 0
+        # TEA Meta ponderado por RFF
+        tea_meta = sum(df_upstream.groupby('zona').apply(
+            lambda x: x['tea_meta'].iloc[0] * x['rff_real'].sum() / total_rff if total_rff > 0 else 0
+        ))
         
         # Refinería (si hay datos downstream)
         if df_downstream is not None and not df_downstream.empty:
@@ -581,10 +586,10 @@ if vista_seleccionada == "🏠 Resumen Ejecutivo":
             )
         
         with col2:
-            delta_tea = tea_promedio - tea_meta
+            delta_tea = tea_real - tea_meta
             st.metric(
-                label="🎯 TEA Promedio",
-                value=f"{tea_promedio:.1f}%",
+                label="🎯 TEA%",
+                value=f"{tea_real:.1f}%",
                 delta=f"{delta_tea:+.1f}% vs Meta"
             )
         
@@ -733,19 +738,42 @@ elif vista_seleccionada == "🌾 Upstream":
         
         with col3:
             st.subheader("🎯 TAE%")
-            # Crear tabla TEA con semáforos
-            df_tea = df_zona[['zona', 'tea_meta', 'tea_real']].copy()
-            df_tea.columns = ['Planta', 'TEA ME', 'TEA Real']
+            # Calcular TEA correctamente: TEA = CPO Total / RFF Total × 100
+            # NO usar promedio de TEA diarios
+            
+            tea_data = []
+            for zona in df_zona['zona'].unique():
+                df_z = df_upstream[df_upstream['zona'] == zona]
+                rff_total = df_z['rff_real'].sum()
+                cpo_total = df_z['cpo_real'].sum()
+                tea_real = (cpo_total / rff_total * 100) if rff_total > 0 else 0
+                tea_meta = df_z['tea_meta'].iloc[0] if len(df_z) > 0 else 0
+                
+                tea_data.append({
+                    'Planta': zona,
+                    'TEA ME': tea_meta,
+                    'TEA Real': tea_real,
+                })
+            
+            df_tea = pd.DataFrame(tea_data)
             df_tea['Dif'] = df_tea['TEA Real'] - df_tea['TEA ME']
             # Para TEA, positivo es bueno
             df_tea['Semáforo'] = df_tea['Dif'].apply(lambda x: '🟢' if x >= 0 else ('🟡' if x >= -0.5 else '🔴'))
             df_tea['DIF'] = df_tea.apply(lambda x: f"{x['Semáforo']} {x['Dif']:+.1f}%", axis=1)
             
-            # Agregar fila TOTAL
+            # Agregar fila TOTAL (TEA total = CPO Total / RFF Total)
+            rff_total_all = df_upstream['rff_real'].sum()
+            cpo_total_all = df_upstream['cpo_real'].sum()
+            tea_real_total = (cpo_total_all / rff_total_all * 100) if rff_total_all > 0 else 0
+            # TEA ME ponderado por RFF
+            tea_me_total = sum(df_upstream.groupby('zona').apply(
+                lambda x: x['tea_meta'].iloc[0] * x['rff_real'].sum() / rff_total_all if rff_total_all > 0 else 0
+            ))
+            
             total_tea = pd.DataFrame({
                 'Planta': ['**TOTAL**'],
-                'TEA ME': [df_tea['TEA ME'].iloc[:-1].mean() if len(df_tea) > 1 else df_tea['TEA ME'].mean()],
-                'TEA Real': [df_tea['TEA Real'].iloc[:-1].mean() if len(df_tea) > 1 else df_tea['TEA Real'].mean()],
+                'TEA ME': [tea_me_total],
+                'TEA Real': [tea_real_total],
             })
             total_tea['Dif'] = total_tea['TEA Real'] - total_tea['TEA ME']
             total_tea['Semáforo'] = total_tea['Dif'].apply(lambda x: '🟢' if x >= 0 else ('🟡' if x >= -0.5 else '🔴'))
@@ -928,9 +956,15 @@ elif vista_seleccionada == "🌾 Upstream":
             st.plotly_chart(fig_barras, use_container_width=True)
         
         with col_graph2:
-            st.subheader("🎯 TEA Promedio")
-            tea_actual = df_upstream['tea_real'].mean()
-            tea_meta = df_upstream['tea_meta'].mean()
+            st.subheader("🎯 TEA% Total")
+            # TEA = CPO / RFF × 100 (cálculo correcto)
+            rff_total = df_upstream['rff_real'].sum()
+            cpo_total = df_upstream['cpo_real'].sum()
+            tea_actual = (cpo_total / rff_total * 100) if rff_total > 0 else 0
+            # TEA Meta ponderado por RFF
+            tea_meta = sum(df_upstream.groupby('zona').apply(
+                lambda x: x['tea_meta'].iloc[0] * x['rff_real'].sum() / rff_total if rff_total > 0 else 0
+            ))
             
             fig_gauge = create_gauge_chart(
                 value=tea_actual,
