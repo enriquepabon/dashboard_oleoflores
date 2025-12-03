@@ -42,15 +42,15 @@
   - [x] 1.6 Crear archivo `README.md` con instrucciones de instalación y ejecución
   - [x] 1.7 Crear archivos CSV de ejemplo en `data/` con estructura definida para upstream y downstream
 
-- [ ] 2.0 Desarrollo del Módulo de Carga y Procesamiento de Datos (ETL)
-  - [ ] 2.1 Crear función `load_file()` en `data_loader.py` que acepte CSV y Excel (.xlsx) usando pandas
-  - [ ] 2.2 Crear función `validate_columns()` que verifique que el archivo tenga las columnas requeridas según el tipo (upstream/downstream)
-  - [ ] 2.3 Crear función `clean_numeric_values()` que elimine caracteres de formato (comas, símbolos %) y convierta a float
-  - [ ] 2.4 Crear función `normalize_dates()` que unifique columnas de fecha a formato datetime estándar
-  - [ ] 2.5 Crear función `calculate_variations()` que compute `Variación = Real - Presupuesto` y `% Cumplimiento`
-  - [ ] 2.6 Crear función `load_upstream_data()` con decorador `@st.cache_data` que integre carga, validación y limpieza
-  - [ ] 2.7 Crear función `load_downstream_data()` con decorador `@st.cache_data` que integre carga, validación y limpieza
-  - [ ] 2.8 Implementar manejo de errores con mensajes claros para archivos faltantes, formato incorrecto o columnas ausentes
+- [x] 2.0 Desarrollo del Módulo de Carga y Procesamiento de Datos (ETL)
+  - [x] 2.1 Crear función `load_file()` en `data_loader.py` que acepte CSV y Excel (.xlsx) usando pandas
+  - [x] 2.2 Crear función `validate_columns()` que verifique que el archivo tenga las columnas requeridas según el tipo (upstream/downstream)
+  - [x] 2.3 Crear función `clean_numeric_values()` que elimine caracteres de formato (comas, símbolos %) y convierta a float
+  - [x] 2.4 Crear función `normalize_dates()` que unifique columnas de fecha a formato datetime estándar
+  - [x] 2.5 Crear función `calculate_variations()` que compute `Variación = Real - Presupuesto` y `% Cumplimiento`
+  - [x] 2.6 Crear función `load_upstream_data()` con decorador `@st.cache_data` que integre carga, validación y limpieza
+  - [x] 2.7 Crear función `load_downstream_data()` con decorador `@st.cache_data` que integre carga, validación y limpieza
+  - [x] 2.8 Implementar manejo de errores con mensajes claros para archivos faltantes, formato incorrecto o columnas ausentes
 
 - [ ] 3.0 Desarrollo del Módulo de Visualizaciones
   - [ ] 3.1 Crear función `create_scorecard()` en `plots.py` que genere tarjeta KPI con valor actual, variación y flecha indicadora (verde/roja)
@@ -96,12 +96,12 @@
 | Tarea | Sub-tareas | Completadas | Estado |
 |-------|------------|-------------|--------|
 | 1.0 Configuración Inicial | 7 | 7 | ✅ Completada |
-| 2.0 Módulo ETL | 8 | 0 | ⏳ Pendiente |
+| 2.0 Módulo ETL | 8 | 8 | ✅ Completada |
 | 3.0 Módulo Visualizaciones | 8 | 0 | ⏳ Pendiente |
 | 4.0 Interfaz Principal | 7 | 0 | ⏳ Pendiente |
 | 5.0 Vistas Específicas | 7 | 0 | ⏳ Pendiente |
 | 6.0 Alertas y Exportación | 7 | 0 | ⏳ Pendiente |
-| **TOTAL** | **44** | **7** | **16%** |
+| **TOTAL** | **44** | **15** | **34%** |
 
 ---
 

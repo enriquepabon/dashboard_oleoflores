@@ -10,6 +10,7 @@ Este paquete contiene los módulos principales del dashboard:
 """
 
 from . import utils
+from . import data_loader
 
 __version__ = "1.0.0"
 __author__ = "Equipo Oleoflores"
