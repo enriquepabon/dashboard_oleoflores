@@ -21,42 +21,36 @@ from datetime import datetime
 # ============================================================================
 # CONFIGURACIÓN DE PLANTAS
 # ============================================================================
+# NOTA: Usamos las filas "Ext [Planta] Proy/Real" que contienen RFF PROCESADA
+# Las filas "Planta Proyección/Real" son datos de ENTRADA, no de extracción
 PLANTAS_CONFIG = {
     'Codazzi': {
-        'fila_proyeccion': 1,  # "Codazzi Proyección"
-        'fila_real': 2,        # "Codazzi Real"
-        'fila_ext_proy': 4,    # "Ext Codazzi Proy"
-        'fila_ext_real': 5,    # "Ext Codazzi Real"
-        'fila_cpo': 6,         # "CPO"
-        'fila_tea': 7,         # "TEA%"
+        'fila_rff_proy': 4,     # "Ext Codazzi Proy" - RFF procesada proyectada
+        'fila_rff_real': 5,     # "Ext Codazzi Real" - RFF procesada real
+        'fila_cpo': 6,          # "CPO"
+        'fila_tea': 7,          # "TEA%"
         'tea_meta': 21.6,
         'tiene_almendra': True,
     },
     'MLB': {
-        'fila_proyeccion': 8,
-        'fila_real': 9,
-        'fila_ext_proy': 11,
-        'fila_ext_real': 12,
+        'fila_rff_proy': 11,    # "Ext MLB Proy"
+        'fila_rff_real': 12,    # "Ext MLB Real"
         'fila_cpo': 13,
         'fila_tea': 14,
         'tea_meta': 18.8,
         'tiene_almendra': False,
     },
     'Sinú': {
-        'fila_proyeccion': 15,  # "Córdoba Proyección"
-        'fila_real': 16,        # "Córdoba Real"
-        'fila_ext_proy': 18,    # "Ext SINÚ Proy"
-        'fila_ext_real': 19,    # "Ext SINÚ Real"
-        'fila_cpo': 20,         # "CPO"
-        'fila_tea': 21,         # "TEA%"
+        'fila_rff_proy': 18,    # "Ext SINÚ Proy"
+        'fila_rff_real': 19,    # "Ext SINÚ Real"
+        'fila_cpo': 20,
+        'fila_tea': 21,
         'tea_meta': 22.0,
         'tiene_almendra': False,
     },
     'A&G': {
-        'fila_proyeccion': 22,
-        'fila_real': 23,
-        'fila_ext_proy': 25,
-        'fila_ext_real': 26,
+        'fila_rff_proy': 25,    # "Ext A&GC Proy"
+        'fila_rff_real': 26,    # "Ext A&GC Real"
         'fila_cpo': 27,
         'fila_tea': 28,
         'tea_meta': 23.5,
@@ -133,11 +127,9 @@ def extract_upstream_data(df, date_columns):
     
     for planta, config in PLANTAS_CONFIG.items():
         for col_idx, fecha in date_columns.items():
-            # Obtener valores de las celdas
-            rff_proy = safe_float(df.iloc[config['fila_proyeccion'], col_idx])
-            rff_real = safe_float(df.iloc[config['fila_real'], col_idx])
-            ext_proy = safe_float(df.iloc[config['fila_ext_proy'], col_idx])
-            ext_real = safe_float(df.iloc[config['fila_ext_real'], col_idx])
+            # Obtener valores de las celdas (usando filas de Extracción = RFF Procesada)
+            rff_proy = safe_float(df.iloc[config['fila_rff_proy'], col_idx])
+            rff_real = safe_float(df.iloc[config['fila_rff_real'], col_idx])
             cpo_real = safe_float(df.iloc[config['fila_cpo'], col_idx])
             tea_value = safe_float(df.iloc[config['fila_tea'], col_idx])
             
@@ -145,8 +137,8 @@ def extract_upstream_data(df, date_columns):
             if 0 < tea_value < 1:
                 tea_value = tea_value * 100
             
-            # Solo agregar si hay datos válidos (al menos RFF o CPO)
-            if rff_real > 0 or cpo_real > 0:
+            # Agregar si hay presupuesto O datos reales (para incluir días sin producción)
+            if rff_proy > 0 or rff_real > 0 or cpo_real > 0:
                 # Calcular presupuesto de CPO basado en TEA meta
                 cpo_proy = rff_proy * (config['tea_meta'] / 100) if rff_proy > 0 else 0
                 
