@@ -130,7 +130,17 @@ UPSTREAM_COLUMNS_EXTENDED = UPSTREAM_COLUMNS + [
     "tanque_4",
 ]
 
+# Columnas para datos DOWNSTREAM (formato de refinería)
 DOWNSTREAM_COLUMNS = [
+    "fecha",
+    "refineria",
+    "produccion_me",
+    "produccion_real",
+    "cumplimiento",
+]
+
+# Columnas extendidas para downstream (formato anterior - compatibilidad)
+DOWNSTREAM_COLUMNS_LEGACY = [
     "fecha",
     "refineria",
     "cpo_entrada",
@@ -143,8 +153,7 @@ DOWNSTREAM_COLUMNS = [
     "mermas",
 ]
 
-# Columnas extendidas para downstream (opcionales)
-DOWNSTREAM_COLUMNS_EXTENDED = DOWNSTREAM_COLUMNS + [
+DOWNSTREAM_COLUMNS_EXTENDED = DOWNSTREAM_COLUMNS_LEGACY + [
     "inventario_rbd",
     "inventario_oleina",
     "inventario_margarinas",

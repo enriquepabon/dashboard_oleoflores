@@ -884,183 +884,173 @@ elif vista_seleccionada == "🌾 Upstream":
 elif vista_seleccionada == "🏭 Downstream":
     # ----- VISTA: DOWNSTREAM -----
     st.header("🏭 Downstream - Refinería y Productos")
-    st.markdown("Balance de masas, inventarios y flujo de producción.")
+    st.markdown("Producción de refinerías, cumplimiento y tendencias.")
     
     if df_downstream is not None and not df_downstream.empty:
         # =====================================================================
-        # FILA 1: TABLA CON SEMÁFOROS + INVENTARIO
+        # FILA 1: KPIs PRINCIPALES
         # =====================================================================
-        col_tabla, col_inv = st.columns([2, 1])
+        
+        # Calcular totales por refinería
+        df_ref1 = df_downstream[df_downstream['refineria'] == 'Refinería 1']
+        df_ref2 = df_downstream[df_downstream['refineria'] == 'Refinería 2']
+        
+        total_me_ref1 = df_ref1['produccion_me'].sum() if not df_ref1.empty else 0
+        total_real_ref1 = df_ref1['produccion_real'].sum() if not df_ref1.empty else 0
+        total_me_ref2 = df_ref2['produccion_me'].sum() if not df_ref2.empty else 0
+        total_real_ref2 = df_ref2['produccion_real'].sum() if not df_ref2.empty else 0
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            cumpl_ref1 = (total_real_ref1 / total_me_ref1 * 100) if total_me_ref1 > 0 else 0
+            delta_ref1 = total_real_ref1 - total_me_ref1
+            st.metric(
+                "🏭 Refinería 1",
+                f"{total_real_ref1:,.0f} Ton",
+                delta=f"{delta_ref1:+,.0f} ({cumpl_ref1:.0f}%)"
+            )
+        
+        with col2:
+            cumpl_ref2 = (total_real_ref2 / total_me_ref2 * 100) if total_me_ref2 > 0 else 0
+            delta_ref2 = total_real_ref2 - total_me_ref2
+            st.metric(
+                "🏭 Refinería 2",
+                f"{total_real_ref2:,.0f} Ton",
+                delta=f"{delta_ref2:+,.0f} ({cumpl_ref2:.0f}%)"
+            )
+        
+        with col3:
+            total_me = total_me_ref1 + total_me_ref2
+            total_real = total_real_ref1 + total_real_ref2
+            cumpl_total = (total_real / total_me * 100) if total_me > 0 else 0
+            st.metric(
+                "📊 Total Producción",
+                f"{total_real:,.0f} Ton",
+                delta=f"Meta: {total_me:,.0f}"
+            )
+        
+        with col4:
+            dias_produccion = len(df_downstream['fecha'].unique())
+            promedio_diario = total_real / dias_produccion if dias_produccion > 0 else 0
+            st.metric(
+                "📅 Promedio Diario",
+                f"{promedio_diario:,.0f} Ton",
+                delta=f"{dias_produccion} días"
+            )
+        
+        st.divider()
+        
+        # =====================================================================
+        # FILA 2: TABLA CON SEMÁFOROS + GRÁFICO DE BARRAS
+        # =====================================================================
+        col_tabla, col_grafico = st.columns([1, 1])
         
         with col_tabla:
-            st.subheader("🏭 Producción Downstream")
+            st.subheader("📊 Cumplimiento por Refinería")
             
-            # Agregar datos por refinería/producto
-            df_ref1 = df_downstream[df_downstream['refineria'] == 1].agg({
-                'cpo_entrada': 'sum',
-                'oleina_real': 'sum',
-                'oleina_presupuesto': 'sum',
-                'rbd_real': 'sum',
-                'rbd_presupuesto': 'sum',
-                'margarinas_real': 'sum',
-                'margarinas_presupuesto': 'sum'
-            })
-            
-            df_ref2 = df_downstream[df_downstream['refineria'] == 2].agg({
-                'cpo_entrada': 'sum',
-                'rbd_real': 'sum',
-                'rbd_presupuesto': 'sum'
-            })
-            
-            # Crear tabla de downstream
+            # Crear tabla de downstream con semáforos
             data_down = []
             
             # Refinería 1
-            pct_ref1 = (df_ref1['cpo_entrada'] / 8670 * 100) if 8670 > 0 else 0
+            pct_ref1 = cumpl_ref1
             data_down.append({
-                'Planta': 'REFINERIA 1',
-                'ME': f"{8670:,.0f}",
-                'Real': f"{df_ref1['cpo_entrada']:,.0f}",
-                'Dif': f"{df_ref1['cpo_entrada'] - 8670:+,.0f}",
-                '% Cumpl': f"{get_semaforo_color(pct_ref1)} {pct_ref1:.0f}%"
+                'Refinería': 'REFINERÍA 1',
+                'ME (Ton)': f"{total_me_ref1:,.0f}",
+                'Real (Ton)': f"{total_real_ref1:,.0f}",
+                'Diferencia': f"{total_real_ref1 - total_me_ref1:+,.0f}",
+                '% Cumpl': f"{get_semaforo_color(pct_ref1)} {pct_ref1:.1f}%"
             })
             
             # Refinería 2
-            pct_ref2 = (df_ref2['cpo_entrada'] / 770 * 100) if 770 > 0 else 0
+            pct_ref2 = cumpl_ref2
             data_down.append({
-                'Planta': 'REFINERIA 2',
-                'ME': f"{770:,.0f}",
-                'Real': f"{df_ref2['cpo_entrada']:,.0f}",
-                'Dif': f"{df_ref2['cpo_entrada'] - 770:+,.0f}",
-                '% Cumpl': f"{get_semaforo_color(pct_ref2)} {pct_ref2:.0f}%"
-            })
-            
-            # Oleína
-            pct_oleina = (df_ref1['oleina_real'] / df_ref1['oleina_presupuesto'] * 100) if df_ref1['oleina_presupuesto'] > 0 else 0
-            data_down.append({
-                'Planta': 'OLEINA',
-                'ME': f"{df_ref1['oleina_presupuesto']:,.0f}",
-                'Real': f"{df_ref1['oleina_real']:,.0f}",
-                'Dif': f"{df_ref1['oleina_real'] - df_ref1['oleina_presupuesto']:+,.0f}",
-                '% Cumpl': f"{get_semaforo_color(pct_oleina)} {pct_oleina:.0f}%"
-            })
-            
-            # Margarinas
-            pct_marg = (df_ref1['margarinas_real'] / df_ref1['margarinas_presupuesto'] * 100) if df_ref1['margarinas_presupuesto'] > 0 else 0
-            data_down.append({
-                'Planta': 'MARGARINAS',
-                'ME': f"{df_ref1['margarinas_presupuesto']:,.0f}",
-                'Real': f"{df_ref1['margarinas_real']:,.0f}",
-                'Dif': f"{df_ref1['margarinas_real'] - df_ref1['margarinas_presupuesto']:+,.0f}",
-                '% Cumpl': f"{get_semaforo_color(pct_marg)} {pct_marg:.0f}%"
+                'Refinería': 'REFINERÍA 2',
+                'ME (Ton)': f"{total_me_ref2:,.0f}",
+                'Real (Ton)': f"{total_real_ref2:,.0f}",
+                'Diferencia': f"{total_real_ref2 - total_me_ref2:+,.0f}",
+                '% Cumpl': f"{get_semaforo_color(pct_ref2)} {pct_ref2:.1f}%"
             })
             
             # Total
-            total_me = 8670 + 770 + df_ref1['oleina_presupuesto'] + df_ref1['margarinas_presupuesto']
-            total_real = df_ref1['cpo_entrada'] + df_ref2['cpo_entrada'] + df_ref1['oleina_real'] + df_ref1['margarinas_real']
-            pct_total = (total_real / total_me * 100) if total_me > 0 else 0
+            pct_total = cumpl_total
             data_down.append({
-                'Planta': '**TOTAL**',
-                'ME': f"{total_me:,.0f}",
-                'Real': f"{total_real:,.0f}",
-                'Dif': f"{total_real - total_me:+,.0f}",
-                '% Cumpl': f"{get_semaforo_color(pct_total)} {pct_total:.0f}%"
+                'Refinería': '**TOTAL**',
+                'ME (Ton)': f"{total_me:,.0f}",
+                'Real (Ton)': f"{total_real:,.0f}",
+                'Diferencia': f"{total_real - total_me:+,.0f}",
+                '% Cumpl': f"{get_semaforo_color(pct_total)} {pct_total:.1f}%"
             })
             
             df_down_table = pd.DataFrame(data_down)
             st.dataframe(df_down_table, use_container_width=True, hide_index=True)
         
-        with col_inv:
-            st.subheader("📦 Inventario")
+        with col_grafico:
+            st.subheader("📊 Real vs Meta")
             
-            # Inventario de productos terminados
-            if 'inventario_rbd' in df_downstream.columns:
-                last_inv = df_downstream.iloc[-1]
-                inv_data = [
-                    {'Producto': 'RBD', 'TM': f"{last_inv.get('inventario_rbd', 0):,.0f}"},
-                    {'Producto': 'Oleína', 'TM': f"{last_inv.get('inventario_oleina', 0):,.0f}"},
-                    {'Producto': 'Margarinas', 'TM': f"{last_inv.get('inventario_margarinas', 0):,.0f}"},
-                ]
-                df_inv_down = pd.DataFrame(inv_data)
-                st.dataframe(df_inv_down, use_container_width=True, hide_index=True)
+            # Gráfico de barras comparativo
+            df_comparativo = pd.DataFrame({
+                'Refinería': ['Refinería 1', 'Refinería 2'],
+                'Meta': [total_me_ref1, total_me_ref2],
+                'Real': [total_real_ref1, total_real_ref2]
+            })
+            
+            fig_barras = create_grouped_bar_chart(
+                df_comparativo,
+                x_column='Refinería',
+                y_columns=['Real', 'Meta'],
+                y_names=['Real', 'Meta'],
+                title=''
+            )
+            st.plotly_chart(fig_barras, use_container_width=True)
         
         st.divider()
         
         # =====================================================================
-        # FILA 2: DIAGRAMA SANKEY
+        # FILA 3: EVOLUCIÓN DIARIA
         # =====================================================================
-        st.subheader("🔀 Flujo de Masa - Refinería")
+        st.subheader("📈 Evolución Diaria de Producción")
         
-        fig_sankey = create_sankey_diagram(
-            df=df_downstream,
-            title=''
-        )
-        st.plotly_chart(fig_sankey, use_container_width=True)
+        # Agregar por fecha y refinería
+        df_evolucion = df_downstream.groupby(['fecha', 'refineria']).agg({
+            'produccion_real': 'sum',
+            'produccion_me': 'sum'
+        }).reset_index()
         
-        st.divider()
+        # Pivot para gráfico
+        df_pivot = df_evolucion.pivot(index='fecha', columns='refineria', values='produccion_real').reset_index()
+        df_pivot = df_pivot.fillna(0)
         
-        # =====================================================================
-        # FILA 3: Area Chart + Bullet Chart
-        # =====================================================================
-        col1, col2 = st.columns([1, 1])
+        col_ref = [c for c in df_pivot.columns if c != 'fecha']
         
-        with col1:
-            st.subheader("📈 Evolución de Producción")
-            
-            # Agregar por fecha
-            df_evolucion = df_downstream.groupby('fecha').agg({
-                'oleina_real': 'sum',
-                'rbd_real': 'sum',
-                'margarinas_real': 'sum'
-            }).reset_index()
-            
-            fig_area = create_area_chart(
-                df_evolucion,
+        if col_ref:
+            fig_linea = create_trend_line_chart(
+                df_pivot,
                 x_column='fecha',
-                y_columns=['oleina_real', 'rbd_real', 'margarinas_real'],
-                y_names=['Oleína', 'RBD', 'Margarinas'],
+                y_columns=col_ref,
+                y_names=col_ref,
                 title=''
             )
-            st.plotly_chart(fig_area, use_container_width=True)
+            st.plotly_chart(fig_linea, use_container_width=True)
         
-        with col2:
-            st.subheader("🎯 Cumplimiento por Producto")
-            
-            # Calcular totales para bullet chart
-            productos = ['Oleína', 'RBD', 'Margarinas']
-            reales = [
-                df_downstream['oleina_real'].sum(),
-                df_downstream['rbd_real'].sum(),
-                df_downstream['margarinas_real'].sum()
-            ]
-            presupuestos = [
-                df_downstream['oleina_presupuesto'].sum(),
-                df_downstream['rbd_presupuesto'].sum(),
-                df_downstream['margarinas_presupuesto'].sum()
-            ]
-            
-            fig_bullet = create_bullet_chart(
-                categories=productos,
-                actuals=reales,
-                targets=presupuestos,
-                title=''
-            )
-            st.plotly_chart(fig_bullet, use_container_width=True)
-        
-        # Tabla resumen y exportación
+        # =====================================================================
+        # FILA 4: TABLA DETALLADA
+        # =====================================================================
         st.divider()
         col_tabla, col_export = st.columns([3, 1])
         
         with col_tabla:
             with st.expander("📋 Ver datos detallados"):
-                st.dataframe(
-                    df_downstream,
-                    use_container_width=True,
-                    hide_index=True
-                )
+                # Formatear tabla para mostrar
+                df_display = df_downstream.copy()
+                df_display['produccion_me'] = df_display['produccion_me'].apply(lambda x: f"{x:,.0f}")
+                df_display['produccion_real'] = df_display['produccion_real'].apply(lambda x: f"{x:,.0f}")
+                df_display['cumplimiento'] = df_display['cumplimiento'].apply(lambda x: f"{x:.1f}%")
+                df_display.columns = ['Fecha', 'Refinería', 'Meta (Ton)', 'Real (Ton)', '% Cumplimiento']
+                st.dataframe(df_display, use_container_width=True, hide_index=True)
         
         with col_export:
-            # 6.4/6.5 - Botón de exportación
+            # Botón de exportación
             df_export = prepare_export_data(df_downstream)
             csv_data, filename = export_to_csv(df_export, "downstream")
             if csv_data:
