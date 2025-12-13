@@ -92,13 +92,14 @@ st.set_page_config(
 )
 
 # =============================================================================
-# AUTENTICACIÓN - Google OAuth
+# AUTENTICACIÓN - DESHABILITADA
 # =============================================================================
-# Verificar autenticación antes de mostrar cualquier contenido
-# Usuarios deben tener correo @oleoflores.com y estar autorizados
-
-if not handle_authentication():
-    st.stop()  # Detener ejecución si no está autenticado
+# La autenticación ahora se maneja con Streamlit Cloud nativo
+# (Settings > Sharing > Private - only viewers you choose)
+#
+# Para reactivar autenticación custom, descomentar:
+# if not handle_authentication():
+#     st.stop()
 
 # =============================================================================
 # ESTILOS CSS PERSONALIZADOS
@@ -813,18 +814,10 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # Mostrar información del usuario logueado
-    render_user_badge()
-    
-    # Panel de administración (solo visible para admins)
-    render_admin_sidebar_button()
-    
-    # Botón de cerrar sesión
-    if st.button("🚪 Cerrar Sesión", use_container_width=True, type="secondary"):
-        if "authenticator" in st.session_state:
-            st.session_state["authenticator"].logout()
-        st.session_state['connected'] = False
-        st.rerun()
+    # Autenticación deshabilitada - usando Streamlit Cloud nativo
+    # render_user_badge()
+    # render_admin_sidebar_button()
+    # if st.button("🚪 Cerrar Sesión", ...): ...
     
     st.divider()
 
