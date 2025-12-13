@@ -101,86 +101,78 @@ st.markdown("""
 
 <style>
     /* =========================================================================
-       OLEOFLORES BI DASHBOARD - PREMIUM GLASSMORPHISM EDITION
+       OLEOFLORES BI DASHBOARD - GOOGLE LANGUAGE EXPLORER STYLE
        ========================================================================= */
     
-    /* Import Google Fonts with font-display: swap for performance */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
     /* -------------------------------------------------------------------------
-       KEYFRAME ANIMATIONS
+       CSS VARIABLES - DESIGN SYSTEM
        ------------------------------------------------------------------------- */
     
-    @keyframes fadeInUp {
-        from {
+    :root {
+        --bg-primary: #0e0e0e;
+        --bg-secondary: #1a1a1a;
+        --bg-card: #1e1e1e;
+        --bg-card-hover: #252525;
+        --border-color: rgba(255, 255, 255, 0.08);
+        --border-hover: rgba(255, 255, 255, 0.15);
+        --text-primary: #ffffff;
+        --text-secondary: #8b8b8b;
+        --text-muted: #6b6b6b;
+        --accent-blue: #4d9fff;
+        --accent-blue-light: #82b9ff;
+        --accent-blue-dark: #3d7fcf;
+        --success: #34d399;
+        --warning: #fbbf24;
+        --error: #f87171;
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+    }
+    
+    /* -------------------------------------------------------------------------
+       KEYFRAME ANIMATIONS - MINIMAL
+       ------------------------------------------------------------------------- */
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+        from { 
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(10px);
         }
-        to {
+        to { 
             opacity: 1;
             transform: translateY(0);
         }
     }
     
-    @keyframes fadeInScale {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-    
-    @keyframes glowPulse {
-        0%, 100% {
-            box-shadow: 0 0 20px rgba(0, 214, 143, 0.15);
-        }
-        50% {
-            box-shadow: 0 0 40px rgba(0, 214, 143, 0.3);
-        }
-    }
-    
-    @keyframes shimmer {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
-    }
-    
-    @keyframes borderGlow {
-        0%, 100% { border-color: rgba(0, 214, 143, 0.3); }
-        50% { border-color: rgba(0, 214, 143, 0.6); }
-    }
-    
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-5px); }
-    }
-    
     /* -------------------------------------------------------------------------
-       ACCESSIBILITY - SKIP LINK (oculto por diseño)
+       ACCESSIBILITY - SKIP LINK
        ------------------------------------------------------------------------- */
     
     .skip-link {
         position: absolute;
         top: -9999px;
         left: -9999px;
-        background: linear-gradient(135deg, #00d68f 0%, #00b377 100%);
-        color: #0d1117;
+        background: var(--accent-blue);
+        color: var(--bg-primary);
         padding: 10px 20px;
-        font-weight: 700;
+        font-weight: 600;
         z-index: 10000;
-        border-radius: 0 0 12px 0;
+        border-radius: var(--radius-sm);
         text-decoration: none;
-        transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         visibility: hidden;
     }
     
     .skip-link:focus {
         top: -9999px;
         visibility: hidden;
-        outline: none;
-        outline-offset: 2px;
     }
     
     /* -------------------------------------------------------------------------
@@ -188,8 +180,8 @@ st.markdown("""
        ------------------------------------------------------------------------- */
     
     *:focus-visible {
-        outline: 2px solid #00d68f;
-        outline-offset: 3px;
+        outline: 2px solid var(--accent-blue);
+        outline-offset: 2px;
     }
     
     button:focus-visible,
@@ -198,82 +190,68 @@ st.markdown("""
     input:focus-visible,
     select:focus-visible,
     textarea:focus-visible {
-        outline: 3px solid #00d68f;
+        outline: 2px solid var(--accent-blue);
         outline-offset: 2px;
-        box-shadow: 0 0 0 8px rgba(0, 214, 143, 0.15);
+        box-shadow: 0 0 0 4px rgba(77, 159, 255, 0.2);
     }
     
     /* -------------------------------------------------------------------------
-       BASE STYLES - PREMIUM DARK MODE
+       BASE STYLES - PURE DARK THEME
        ------------------------------------------------------------------------- */
     
-    /* Fondo principal con gradiente premium + aurora effect */
     .stApp {
-        background: 
-            radial-gradient(ellipse at 20% 20%, rgba(0, 214, 143, 0.15) 0%, transparent 40%),
-            radial-gradient(ellipse at 80% 80%, rgba(255, 170, 0, 0.12) 0%, transparent 40%),
-            radial-gradient(ellipse at 50% 50%, rgba(88, 166, 255, 0.08) 0%, transparent 50%),
-            linear-gradient(180deg, #0d1117 0%, #161b22 30%, #1c2128 70%, #0d1117 100%);
+        background: var(--bg-primary) !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         min-height: 100vh;
     }
     
-    /* Headers principales con animación NEON */
+    /* Headers - Clean White */
     .stApp h1, .stApp h2, .stApp h3 {
-        color: #f0f6fc !important;
-        font-weight: 700;
+        color: var(--text-primary) !important;
+        font-weight: 600;
         letter-spacing: -0.02em;
     }
     
     .stApp h1 {
-        background: linear-gradient(135deg, #00d68f 0%, #39d353 25%, #0bc5ea 50%, #58a6ff 75%, #ffaa00 100%);
-        background-size: 300% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-size: 3rem !important;
-        font-weight: 800 !important;
-        animation: shimmer 3s linear infinite;
-        text-shadow: 0 0 40px rgba(0, 214, 143, 0.3);
+        font-size: 2.5rem !important;
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+        -webkit-text-fill-color: var(--text-primary) !important;
+        background: none !important;
+        animation: none !important;
     }
     
     .stApp h2 {
-        font-size: 1.75rem !important;
-        color: #f0f6fc !important;
-        position: relative;
-        display: inline-block;
+        font-size: 1.5rem !important;
+        color: var(--text-primary) !important;
     }
     
     .stApp h3 {
-        font-size: 1.25rem !important;
-        color: #c9d1d9 !important;
+        font-size: 1.125rem !important;
+        color: var(--text-secondary) !important;
     }
     
-    /* Texto general - ALTO CONTRASTE WCAG AAA */
+    /* General text */
     .stApp, .stApp p, .stApp span, .stApp label {
-        color: #c9d1d9;
+        color: var(--text-secondary);
         line-height: 1.6;
     }
     
     .stMarkdown {
-        color: #c9d1d9;
+        color: var(--text-secondary);
     }
     
     .stMarkdown p {
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
     }
     
     /* -------------------------------------------------------------------------
-       SIDEBAR - GLASSMORPHISM PREMIUM
+       SIDEBAR - MINIMAL DARK
        ------------------------------------------------------------------------- */
     
     section[data-testid="stSidebar"] {
-        background: 
-            linear-gradient(180deg, rgba(22, 27, 34, 0.98) 0%, rgba(13, 17, 23, 0.98) 100%) !important;
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
+        background: var(--bg-primary) !important;
+        border-right: 1px solid var(--border-color);
     }
     
     section[data-testid="stSidebar"] > div {
@@ -281,513 +259,399 @@ st.markdown("""
     }
     
     section[data-testid="stSidebar"] .stMarkdown h3 {
-        color: #00d68f !important;
-        font-size: 0.8rem;
-        font-weight: 700;
+        color: var(--text-secondary) !important;
+        font-size: 0.75rem;
+        font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: 0.15em;
+        letter-spacing: 0.1em;
         margin-top: 1rem;
         padding-bottom: 0.5rem;
-        border-bottom: 1px solid rgba(0, 214, 143, 0.2);
+        border-bottom: 1px solid var(--border-color);
     }
     
     /* Sidebar title styling */
     .sidebar-title {
-        color: #f0f6fc !important;
-        font-size: 2rem !important;
-        font-weight: 800 !important;
+        color: var(--text-primary) !important;
+        font-size: 1.75rem !important;
+        font-weight: 600 !important;
         margin-bottom: 0.25rem;
-        background: linear-gradient(135deg, #00d68f 0%, #0bc5ea 50%, #ffaa00 100%);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: shimmer 4s linear infinite;
+        -webkit-text-fill-color: var(--text-primary) !important;
+        background: none !important;
+        animation: none !important;
     }
     
     .sidebar-subtitle {
-        color: #8b949e !important;
-        font-size: 0.85rem;
+        color: var(--text-muted) !important;
+        font-size: 0.8rem;
         margin-bottom: 1.5rem;
-        letter-spacing: 0.08em;
-        font-weight: 500;
+        letter-spacing: 0.05em;
+        font-weight: 400;
     }
     
     /* -------------------------------------------------------------------------
-       METRIC CARDS - GLASSMORPHISM + GLOW + ANIMATION
+       METRIC CARDS - MINIMAL STYLE (Google Language Explorer)
        ------------------------------------------------------------------------- */
     
     div[data-testid="metric-container"] {
-        background: 
-            linear-gradient(135deg, 
-                rgba(0, 214, 143, 0.08) 0%,
-                rgba(255, 255, 255, 0.1) 50%, 
-                rgba(88, 166, 255, 0.06) 100%);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 2px solid rgba(0, 214, 143, 0.25);
-        border-radius: 24px;
-        padding: 28px;
-        box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.5),
-            0 0 40px rgba(0, 214, 143, 0.15),
-            0 0 80px rgba(0, 214, 143, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.15),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        animation: fadeInUp 0.6s ease-out, glowPulse 4s ease-in-out infinite;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        transition: all 0.2s ease;
+        animation: slideUp 0.3s ease-out;
         position: relative;
-        overflow: hidden;
     }
     
-    /* Neon glow border effect */
-    div[data-testid="metric-container"]::before {
-        content: '';
-        position: absolute;
-        top: -2px;
-        left: -2px;
-        right: -2px;
-        bottom: -2px;
-        background: linear-gradient(135deg, #00d68f, #0bc5ea, #ffaa00, #00d68f);
-        background-size: 400% 400%;
-        border-radius: 26px;
-        z-index: -1;
-        opacity: 0.3;
-        animation: shimmer 6s linear infinite;
-    }
-    
-    /* Shimmer sweep effect */
+    div[data-testid="metric-container"]::before,
     div[data-testid="metric-container"]::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-            90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.1), 
-            transparent
-        );
-        transition: left 0.6s ease;
-    }
-    
-    div[data-testid="metric-container"]:hover::after {
-        left: 100%;
+        display: none;
     }
     
     div[data-testid="metric-container"]:hover {
-        border-color: rgba(0, 214, 143, 0.6);
-        box-shadow: 
-            0 16px 48px rgba(0, 0, 0, 0.6),
-            0 0 60px rgba(0, 214, 143, 0.3),
-            0 0 120px rgba(0, 214, 143, 0.15),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        transform: translateY(-6px) scale(1.03);
+        border-color: var(--border-hover);
+        background: var(--bg-card-hover);
+        transform: none;
+        box-shadow: none;
     }
     
     div[data-testid="metric-container"] label {
-        color: #c9d1d9 !important;
-        font-weight: 600;
-        font-size: 0.95rem;
+        color: var(--text-secondary) !important;
+        font-weight: 400;
+        font-size: 0.75rem;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
     }
     
     div[data-testid="metric-container"] [data-testid="stMetricValue"] {
-        color: #f0f6fc !important;
-        font-weight: 800;
-        font-size: 2.2rem !important;
+        color: var(--text-primary) !important;
+        font-weight: 400;
+        font-size: 2rem !important;
         letter-spacing: -0.02em;
     }
     
     div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-    
-    /* Positive delta styling */
-    div[data-testid="metric-container"] [data-testid="stMetricDelta"] svg {
-        fill: currentColor;
+        font-weight: 500;
+        font-size: 0.85rem;
     }
     
     /* -------------------------------------------------------------------------
-       BUTTONS - GRADIENT STYLE + ANIMATIONS
+       BUTTONS - MINIMAL STYLE
        ------------------------------------------------------------------------- */
     
     .stButton > button {
-        background: linear-gradient(135deg, #00d68f 0%, #00b377 100%);
-        color: #0d1117;
+        background: var(--accent-blue);
+        color: var(--bg-primary);
         border: none;
-        border-radius: 12px;
-        padding: 0.75rem 1.75rem;
-        font-weight: 700;
-        font-size: 0.95rem;
-        letter-spacing: 0.02em;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 
-            0 4px 15px rgba(0, 214, 143, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        position: relative;
-        overflow: hidden;
+        border-radius: var(--radius-md);
+        padding: 0.625rem 1.25rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        box-shadow: none;
     }
     
     .stButton > button::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-            90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.3), 
-            transparent
-        );
-        transition: left 0.5s ease;
-    }
-    
-    .stButton > button:hover::before {
-        left: 100%;
+        display: none;
     }
     
     .stButton > button:hover {
-        background: linear-gradient(135deg, #00b377 0%, #00d68f 100%);
-        box-shadow: 
-            0 8px 30px rgba(0, 214, 143, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        transform: translateY(-3px);
+        background: var(--accent-blue-light);
+        transform: none;
+        box-shadow: none;
     }
     
     .stButton > button:active {
-        transform: translateY(-1px);
+        background: var(--accent-blue-dark);
+    }
+    
+    /* Secondary buttons - outlined style */
+    .stButton > button[kind="secondary"] {
+        background: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .stButton > button[kind="secondary"]:hover {
+        background: var(--bg-card);
+        border-color: var(--border-hover);
     }
     
     /* Download buttons */
     .stDownloadButton > button {
-        background: linear-gradient(135deg, #ffaa00 0%, #f0883e 100%);
-        color: #0d1117;
-        border: none;
-        border-radius: 12px;
-        font-weight: 700;
-        box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4);
+        background: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        font-weight: 500;
+        box-shadow: none;
     }
     
     .stDownloadButton > button:hover {
-        box-shadow: 0 8px 30px rgba(255, 170, 0, 0.5);
-        transform: translateY(-3px);
+        background: var(--bg-card);
+        border-color: var(--border-hover);
+        transform: none;
     }
     
     /* -------------------------------------------------------------------------
-       FORM ELEMENTS - GLASSMORPHISM
+       FORM ELEMENTS - MINIMAL
        ------------------------------------------------------------------------- */
     
     /* Select boxes */
     .stSelectbox > div > div {
-        background: rgba(22, 27, 34, 0.9) !important;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        color: #f0f6fc;
-        transition: all 0.3s ease;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        transition: border-color 0.2s ease;
     }
     
     .stSelectbox > div > div:hover {
-        border-color: rgba(0, 214, 143, 0.5);
-        box-shadow: 0 0 20px rgba(0, 214, 143, 0.1);
+        border-color: var(--border-hover);
+        box-shadow: none;
     }
     
     /* Multiselect */
     .stMultiSelect > div > div {
-        background: rgba(22, 27, 34, 0.9) !important;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
     }
     
     /* Checkbox */
     .stCheckbox label span {
-        color: #c9d1d9 !important;
-        font-weight: 500;
+        color: var(--text-secondary) !important;
+        font-weight: 400;
     }
     
     /* Radio buttons */
     div[data-testid="stRadio"] > label {
-        color: #c9d1d9 !important;
-        font-weight: 600;
+        color: var(--text-secondary) !important;
+        font-weight: 500;
     }
     
     div[data-testid="stRadio"] label[data-checked="true"] {
-        color: #00d68f !important;
+        color: var(--accent-blue) !important;
     }
     
     /* File uploader */
     .stFileUploader {
-        background: rgba(22, 27, 34, 0.6);
-        backdrop-filter: blur(10px);
-        border: 2px dashed rgba(255, 255, 255, 0.15);
-        border-radius: 16px;
-        padding: 1.25rem;
-        transition: all 0.3s ease;
+        background: var(--bg-card);
+        border: 1px dashed var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        transition: border-color 0.2s ease;
     }
     
     .stFileUploader:hover {
-        border-color: rgba(0, 214, 143, 0.5);
-        background: rgba(22, 27, 34, 0.8);
-        box-shadow: 0 0 30px rgba(0, 214, 143, 0.1);
+        border-color: var(--border-hover);
+        background: var(--bg-card);
+        box-shadow: none;
     }
     
     /* -------------------------------------------------------------------------
-       DIVIDERS & SEPARATORS
+       DIVIDERS & SEPARATORS - SUBTLE
        ------------------------------------------------------------------------- */
     
     hr {
-        margin: 2rem 0;
+        margin: 1.5rem 0;
         border: none;
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.1) 20%, 
-            rgba(0, 214, 143, 0.3) 50%, 
-            rgba(255, 255, 255, 0.1) 80%, 
-            transparent);
+        background: var(--border-color);
     }
     
     .stDivider {
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.1), 
-            transparent) !important;
+        background: var(--border-color) !important;
     }
     
     /* -------------------------------------------------------------------------
-       EXPANDERS - GLASSMORPHISM
+       EXPANDERS - MINIMAL
        ------------------------------------------------------------------------- */
     
     .streamlit-expanderHeader {
-        background: rgba(22, 27, 34, 0.8) !important;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        color: #f0f6fc !important;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        color: var(--text-primary) !important;
+        font-weight: 500;
+        transition: border-color 0.2s ease;
     }
     
     .streamlit-expanderHeader:hover {
-        border-color: rgba(0, 214, 143, 0.4);
-        background: rgba(22, 27, 34, 0.9) !important;
+        border-color: var(--border-hover);
+        background: var(--bg-card) !important;
     }
     
     .streamlit-expanderContent {
-        background: rgba(22, 27, 34, 0.6);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
         border-top: none;
-        border-radius: 0 0 12px 12px;
-        animation: fadeInUp 0.3s ease-out;
+        border-radius: 0 0 var(--radius-md) var(--radius-md);
     }
     
     /* -------------------------------------------------------------------------
-       DATA TABLES - PREMIUM GLASSMORPHISM
+       DATA TABLES - MINIMAL STYLE
        ------------------------------------------------------------------------- */
     
     .stDataFrame {
-        background: 
-            linear-gradient(135deg, 
-                rgba(0, 214, 143, 0.05) 0%,
-                rgba(255, 255, 255, 0.08) 50%, 
-                rgba(88, 166, 255, 0.04) 100%);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 2px solid rgba(0, 214, 143, 0.2);
-        border-radius: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
         overflow: hidden;
-        animation: fadeInUp 0.5s ease-out;
-        box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.4),
-            0 0 40px rgba(0, 214, 143, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        animation: fadeIn 0.3s ease-out;
     }
     
     .stDataFrame [data-testid="stDataFrameResizable"] {
         background: transparent !important;
     }
     
-    /* Premium table headers with neon glow */
+    /* Table headers with blue accent */
     .stDataFrame thead th,
     .stDataFrame [data-testid="glideDataEditor"] [role="columnheader"] {
-        background: linear-gradient(135deg, 
-            rgba(0, 214, 143, 0.35) 0%, 
-            rgba(0, 179, 119, 0.25) 100%) !important;
-        color: #ffffff !important;
-        font-weight: 800 !important;
-        font-size: 0.9rem !important;
+        background: rgba(77, 159, 255, 0.1) !important;
+        color: var(--text-primary) !important;
+        font-weight: 600 !important;
+        font-size: 0.8rem !important;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        padding: 18px 16px !important;
-        border-bottom: 3px solid rgba(0, 214, 143, 0.5) !important;
-        text-shadow: 0 0 10px rgba(0, 214, 143, 0.3);
+        letter-spacing: 0.05em;
+        padding: 14px 12px !important;
+        border-bottom: 1px solid var(--border-color) !important;
     }
     
-    /* Table rows with glow on hover */
+    /* Table rows */
     .stDataFrame tbody tr,
     .stDataFrame [data-testid="glideDataEditor"] [role="row"] {
-        transition: all 0.3s ease;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        transition: background 0.15s ease;
+        border-bottom: 1px solid var(--border-color);
     }
     
     .stDataFrame tbody tr:hover,
     .stDataFrame [data-testid="glideDataEditor"] [role="row"]:hover {
-        background: linear-gradient(90deg, rgba(0, 214, 143, 0.12), rgba(0, 214, 143, 0.06)) !important;
-        transform: scale(1.01);
-        box-shadow: 0 0 20px rgba(0, 214, 143, 0.1);
+        background: var(--bg-card-hover) !important;
+        transform: none;
+        box-shadow: none;
     }
     
     /* Table cells */
     .stDataFrame td,
     .stDataFrame [data-testid="glideDataEditor"] [role="gridcell"] {
-        color: #c9d1d9 !important;
-        font-size: 0.9rem;
-        padding: 12px 16px !important;
+        color: var(--text-secondary) !important;
+        font-size: 0.875rem;
+        padding: 10px 12px !important;
     }
     
     /* -------------------------------------------------------------------------
-       ALERTS & MESSAGES - GLASSMORPHISM
+       ALERTS & MESSAGES - MINIMAL
        ------------------------------------------------------------------------- */
     
     .stAlert {
-        border-radius: 16px;
-        border: none;
-        backdrop-filter: blur(10px);
-        animation: fadeInUp 0.4s ease-out;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+        animation: fadeIn 0.3s ease-out;
     }
     
     .alert-warning {
-        background: 
-            linear-gradient(135deg, 
-                rgba(255, 170, 0, 0.15) 0%, 
-                rgba(240, 136, 62, 0.1) 100%);
-        border-left: 4px solid #ffaa00;
-        padding: 1.25rem;
-        border-radius: 0 16px 16px 0;
-        box-shadow: 0 4px 20px rgba(255, 170, 0, 0.1);
+        background: rgba(251, 191, 36, 0.1);
+        border-left: 3px solid var(--warning);
+        padding: 1rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
     }
     
     .alert-error {
-        background: 
-            linear-gradient(135deg, 
-                rgba(255, 107, 107, 0.15) 0%, 
-                rgba(245, 101, 101, 0.1) 100%);
-        border-left: 4px solid #ff6b6b;
-        padding: 1.25rem;
-        border-radius: 0 16px 16px 0;
-        box-shadow: 0 4px 20px rgba(255, 107, 107, 0.1);
+        background: rgba(248, 113, 113, 0.1);
+        border-left: 3px solid var(--error);
+        padding: 1rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
     }
     
     .alert-success {
-        background: 
-            linear-gradient(135deg, 
-                rgba(0, 214, 143, 0.15) 0%, 
-                rgba(0, 179, 119, 0.1) 100%);
-        border-left: 4px solid #00d68f;
-        padding: 1.25rem;
-        border-radius: 0 16px 16px 0;
-        box-shadow: 0 4px 20px rgba(0, 214, 143, 0.1);
+        background: rgba(52, 211, 153, 0.1);
+        border-left: 3px solid var(--success);
+        padding: 1rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
     }
     
     /* -------------------------------------------------------------------------
-       TABS - GLASSMORPHISM + ANIMATION
+       TABS - MINIMAL STYLE
        ------------------------------------------------------------------------- */
     
     .stTabs [data-baseweb="tab-list"] {
-        background: rgba(22, 27, 34, 0.6);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 6px;
-        gap: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: transparent;
+        border-radius: 0;
+        padding: 0;
+        gap: 0;
+        border-bottom: 1px solid var(--border-color);
     }
     
     .stTabs [data-baseweb="tab"] {
         background: transparent;
-        color: #c9d1d9;
-        border-radius: 10px;
-        font-weight: 600;
-        padding: 10px 20px;
-        transition: all 0.3s ease;
+        color: var(--text-secondary);
+        border-radius: 0;
+        font-weight: 500;
+        padding: 12px 16px;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        transition: all 0.2s ease;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #f0f6fc;
+        background: transparent;
+        color: var(--text-primary);
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #00d68f 0%, #00b377 100%) !important;
-        color: #0d1117 !important;
-        box-shadow: 0 4px 15px rgba(0, 214, 143, 0.4);
+        background: transparent !important;
+        color: var(--accent-blue) !important;
+        border-bottom: 2px solid var(--accent-blue) !important;
+        box-shadow: none;
     }
     
     /* -------------------------------------------------------------------------
-       PLOTLY CHARTS CONTAINER - GLASSMORPHISM
+       PLOTLY CHARTS CONTAINER - MINIMAL
        ------------------------------------------------------------------------- */
     
     .js-plotly-plot {
-        border-radius: 16px;
+        border-radius: var(--radius-lg);
         overflow: hidden;
-        animation: fadeInScale 0.5s ease-out;
     }
     
     .js-plotly-plot .plotly {
-        border-radius: 16px;
+        border-radius: var(--radius-lg);
     }
     
-    /* Chart containers with glass effect */
+    /* Chart containers */
     .stPlotlyChart {
-        background: rgba(22, 27, 34, 0.4);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
         padding: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+        transition: border-color 0.2s ease;
     }
     
     .stPlotlyChart:hover {
-        border-color: rgba(0, 214, 143, 0.3);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        border-color: var(--border-hover);
+        box-shadow: none;
     }
     
     /* -------------------------------------------------------------------------
-       SCROLLBAR STYLING - PREMIUM
+       SCROLLBAR STYLING - MINIMAL
        ------------------------------------------------------------------------- */
     
     ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
     }
     
     ::-webkit-scrollbar-track {
-        background: rgba(22, 27, 34, 0.6);
-        border-radius: 5px;
+        background: var(--bg-secondary);
     }
     
     ::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, 
-            rgba(0, 214, 143, 0.4), 
-            rgba(0, 179, 119, 0.3));
-        border-radius: 5px;
-        border: 2px solid transparent;
-        background-clip: content-box;
+        background: var(--text-muted);
+        border-radius: 4px;
     }
     
     ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, 
-            rgba(0, 214, 143, 0.6), 
-            rgba(0, 179, 119, 0.5));
-        background-clip: content-box;
+        background: var(--text-secondary);
     }
     
     /* -------------------------------------------------------------------------
@@ -795,30 +659,22 @@ st.markdown("""
        ------------------------------------------------------------------------- */
     
     .stCaption, small, .stApp small {
-        color: #8b949e !important;
-        font-size: 0.85rem;
+        color: var(--text-muted) !important;
+        font-size: 0.8rem;
     }
     
     /* -------------------------------------------------------------------------
-       COLUMN CONTAINERS - ANIMATION
+       COLUMN CONTAINERS
        ------------------------------------------------------------------------- */
     
     .stApp .element-container {
-        animation: fadeInUp 0.5s ease-out;
-        animation-fill-mode: both;
+        animation: fadeIn 0.3s ease-out;
     }
     
-    .stApp .element-container:nth-child(1) { animation-delay: 0.05s; }
-    .stApp .element-container:nth-child(2) { animation-delay: 0.1s; }
-    .stApp .element-container:nth-child(3) { animation-delay: 0.15s; }
-    .stApp .element-container:nth-child(4) { animation-delay: 0.2s; }
-    .stApp .element-container:nth-child(5) { animation-delay: 0.25s; }
-    
     /* -------------------------------------------------------------------------
-       LAYOUT - SCROLL FIX (AGGRESSIVE)
+       LAYOUT - SCROLL FIX
        ------------------------------------------------------------------------- */
     
-    /* Force scroll on main container */
     .stApp {
         overflow-y: auto !important;
         overflow-x: hidden !important;
@@ -837,7 +693,6 @@ st.markdown("""
         max-height: none !important;
     }
     
-    /* Main content area */
     .stApp .stMain,
     .stApp [data-testid="stAppViewContainer"],
     .stApp [data-testid="stVerticalBlock"] {
@@ -847,8 +702,8 @@ st.markdown("""
     }
     
     section[data-testid="stSidebar"] {
-        width: 320px !important;
-        min-width: 320px !important;
+        width: 300px !important;
+        min-width: 300px !important;
         overflow-y: auto !important;
     }
     
@@ -856,7 +711,6 @@ st.markdown("""
         min-height: 24px;
     }
     
-    /* Ocultar barra de progreso verde superior */
     .stApp > header {
         background: transparent !important;
     }
@@ -872,10 +726,59 @@ st.markdown("""
         opacity: 0 !important;
     }
     
-    /* Ensure content flows naturally */
     .stApp [data-testid="stVerticalBlockBorderWrapper"] {
         height: auto !important;
         min-height: auto !important;
+    }
+    
+    /* -------------------------------------------------------------------------
+       PROGRESS BARS - BLUE ACCENT (Like Language Explorer)
+       ------------------------------------------------------------------------- */
+    
+    .stProgress > div > div {
+        background: linear-gradient(90deg, var(--accent-blue), var(--accent-blue-light));
+        border-radius: 4px;
+    }
+    
+    .stProgress > div {
+        background: var(--bg-secondary);
+        border-radius: 4px;
+    }
+    
+    /* -------------------------------------------------------------------------
+       INFO CARDS HELPER CLASSES
+       ------------------------------------------------------------------------- */
+    
+    .info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 16px 20px;
+        transition: border-color 0.2s ease;
+    }
+    
+    .info-card:hover {
+        border-color: var(--border-hover);
+    }
+    
+    .info-card-label {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+    }
+    
+    .info-card-value {
+        color: var(--text-primary);
+        font-size: 1.75rem;
+        font-weight: 400;
+    }
+    
+    .info-card-subtext {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        margin-top: 4px;
     }
     
 </style>

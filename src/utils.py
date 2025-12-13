@@ -14,65 +14,65 @@ Este módulo contiene:
 
 COLORS = {
     # =========================================================================
-    # DARK MODE PREMIUM - Paleta Corporativa Sofisticada con Alto Contraste
+    # GOOGLE LANGUAGE EXPLORER STYLE - Minimal Dark Theme with Blue Accent
     # =========================================================================
     
-    # Fondos - Gradiente oscuro premium CON MEJOR CONTRASTE
-    "fondo": "#0d1117",                    # Fondo principal (más equilibrado)
-    "fondo_secundario": "#161b22",         # Cards y secciones
-    "fondo_terciario": "#21262d",          # Nivel adicional de profundidad
-    "fondo_tarjeta": "#1c2128",            # Fondo de tarjetas
-    "fondo_glass": "rgba(255,255,255,0.08)", # Glassmorphism más visible
-    "fondo_hover": "rgba(255,255,255,0.12)", # Hover states más notorios
+    # Fondos - Negro puro minimalista
+    "fondo": "#0e0e0e",                    # Fondo principal (negro puro)
+    "fondo_secundario": "#1a1a1a",         # Nivel secundario
+    "fondo_terciario": "#252525",          # Nivel adicional
+    "fondo_tarjeta": "#1e1e1e",            # Fondo de tarjetas
+    "fondo_glass": "rgba(255,255,255,0.05)", # Efecto sutil
+    "fondo_hover": "rgba(255,255,255,0.08)", # Hover states
     
-    # Colores principales corporativos - VIBRANTES
-    "verde_oleo": "#00d68f",               # Verde vibrante (éxito)
-    "verde_oscuro": "#00b377",             # Verde para gradientes
-    "verde_glow": "rgba(0, 214, 143, 0.4)", # Verde para efectos glow
-    "dorado": "#ffaa00",                   # Dorado brillante (neutro)
-    "dorado_claro": "#ffc233",             # Dorado para hover
-    "rojo_alerta": "#ff6b6b",              # Rojo suave (alerta)
+    # Colores principales - Azul como acento principal
+    "verde_oleo": "#4d9fff",               # Azul principal (reemplaza verde)
+    "verde_oscuro": "#3d7fcf",             # Azul oscuro para gradientes
+    "verde_glow": "rgba(77, 159, 255, 0.3)", # Azul para efectos glow
+    "dorado": "#fbbf24",                   # Amarillo/dorado para warnings
+    "dorado_claro": "#fcd34d",             # Dorado para hover
+    "rojo_alerta": "#f87171",              # Rojo suave (alerta)
     
-    # Texto - ALTO CONTRASTE WCAG AAA
-    "texto_principal": "#f0f6fc",          # Texto blanco suave (mejor legibilidad)
-    "texto_secundario": "#c9d1d9",         # Gris azulado claro mejorado
-    "texto_muted": "#8b949e",              # Texto deshabilitado
+    # Texto - Alto Contraste
+    "texto_principal": "#ffffff",          # Texto blanco
+    "texto_secundario": "#8b8b8b",         # Gris para labels
+    "texto_muted": "#6b6b6b",              # Texto deshabilitado
     
-    # Acentos adicionales - VIBRANTES
-    "azul_info": "#58a6ff",                # Azul más vibrante
-    "naranja": "#f0883e",                  # Naranja cálido mejorado
-    "cyan": "#39d353",                     # Cyan/verde para destacar
-    "purple": "#a371f7",                   # Púrpura más vibrante
-    "rosa": "#f778ba",                     # Rosa vibrante
+    # Acentos adicionales
+    "azul_info": "#4d9fff",                # Azul principal
+    "naranja": "#fb923c",                  # Naranja
+    "cyan": "#22d3ee",                     # Cyan
+    "purple": "#a78bfa",                   # Púrpura
+    "rosa": "#f472b6",                     # Rosa
     
-    # UI Elements - GLASSMORPHISM
-    "gris_claro": "#30363d",               # Bordes y separadores
-    "borde": "rgba(255,255,255,0.15)",     # Bordes sutiles más visibles
-    "borde_activo": "rgba(0,214,143,0.6)", # Borde con glow verde
-    "glass_border": "rgba(255,255,255,0.18)", # Bordes glass
-    "glass_shadow": "rgba(0,0,0,0.4)",     # Sombras para glass
+    # UI Elements
+    "gris_claro": "#2a2a2a",               # Bordes y separadores
+    "borde": "rgba(255,255,255,0.08)",     # Bordes sutiles
+    "borde_activo": "rgba(77,159,255,0.5)", # Borde con glow azul
+    "glass_border": "rgba(255,255,255,0.1)", # Bordes glass
+    "glass_shadow": "rgba(0,0,0,0.3)",     # Sombras
 }
 
-# Paleta para gráficos de barras y líneas - Colores vibrantes
+# Paleta para gráficos - Azul como color primario
 CHART_COLORS = [
-    "#00d68f",  # Verde vibrante
-    "#ffaa00",  # Dorado
-    "#4299e1",  # Azul
-    "#ed8936",  # Naranja
-    "#9f7aea",  # Púrpura
-    "#0bc5ea",  # Cyan
-    "#f687b3",  # Rosa
-    "#68d391",  # Verde claro
+    "#4d9fff",  # Azul principal
+    "#82b9ff",  # Azul claro
+    "#22d3ee",  # Cyan
+    "#a78bfa",  # Púrpura
+    "#fbbf24",  # Amarillo
+    "#fb923c",  # Naranja
+    "#f472b6",  # Rosa
+    "#34d399",  # Verde menta
 ]
 
-# Colores para el diagrama Sankey
+# Colores para el diagrama Sankey - Usando tonos azules
 SANKEY_COLORS = {
-    "cpo_entrada": "#ffaa00",     # Entrada CPO (dorado)
-    "refineria": "#00d68f",       # Refinería (verde)
-    "oleina": "#4299e1",          # Oleína (azul)
-    "rbd": "#0bc5ea",             # RBD (cyan)
-    "margarinas": "#9f7aea",      # Margarinas (púrpura)
-    "mermas": "#ff6b6b",          # Mermas (rojo)
+    "cpo_entrada": "#fbbf24",     # Entrada CPO (dorado)
+    "refineria": "#4d9fff",       # Refinería (azul)
+    "oleina": "#22d3ee",          # Oleína (cyan)
+    "rbd": "#82b9ff",             # RBD (azul claro)
+    "margarinas": "#a78bfa",      # Margarinas (púrpura)
+    "mermas": "#f87171",          # Mermas (rojo)
 }
 
 # =============================================================================
