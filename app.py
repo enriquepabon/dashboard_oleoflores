@@ -112,18 +112,18 @@ st.markdown("""
        ------------------------------------------------------------------------- */
     
     :root {
-        --bg-primary: #0e0e0e;
-        --bg-secondary: #1a1a1a;
-        --bg-card: #1e1e1e;
-        --bg-card-hover: #252525;
-        --border-color: rgba(255, 255, 255, 0.08);
-        --border-hover: rgba(255, 255, 255, 0.15);
+        --bg-primary: #0a0a0a;
+        --bg-secondary: #141414;
+        --bg-card: #171717;
+        --bg-card-hover: #1f1f1f;
+        --border-color: rgba(255, 255, 255, 0.1);
+        --border-hover: rgba(255, 255, 255, 0.2);
         --text-primary: #ffffff;
-        --text-secondary: #8b8b8b;
-        --text-muted: #6b6b6b;
-        --accent-blue: #4d9fff;
-        --accent-blue-light: #82b9ff;
-        --accent-blue-dark: #3d7fcf;
+        --text-secondary: #a1a1aa;
+        --text-muted: #71717a;
+        --accent-blue: #60a5fa;
+        --accent-blue-light: #93c5fd;
+        --accent-blue-dark: #3b82f6;
         --success: #34d399;
         --warning: #fbbf24;
         --error: #f87171;

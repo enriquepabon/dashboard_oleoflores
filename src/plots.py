@@ -42,36 +42,36 @@ LAYOUT_DEFAULTS = {
     "plot_bgcolor": "rgba(0,0,0,0)",
     "margin": {"l": 60, "r": 60, "t": 80, "b": 60},
     "hoverlabel": {
-        "bgcolor": "rgba(30, 30, 30, 0.95)",
+        "bgcolor": "rgba(23, 23, 23, 0.95)",
         "font_size": 13,
         "font_family": "Inter, sans-serif",
         "font_color": "#ffffff",
-        "bordercolor": "#4d9fff",
+        "bordercolor": "#60a5fa",
         "namelength": -1
     },
     "xaxis": {
-        "gridcolor": "rgba(255, 255, 255, 0.05)",
+        "gridcolor": "rgba(255, 255, 255, 0.06)",
         "gridwidth": 1,
-        "linecolor": "rgba(255, 255, 255, 0.1)",
+        "linecolor": "rgba(255, 255, 255, 0.12)",
         "linewidth": 1,
-        "tickfont": {"color": "#8b8b8b", "size": 11},
+        "tickfont": {"color": "#a1a1aa", "size": 11},
         "title_font": {"color": "#ffffff", "size": 13, "family": "Inter, sans-serif"}
     },
     "yaxis": {
-        "gridcolor": "rgba(255, 255, 255, 0.05)",
+        "gridcolor": "rgba(255, 255, 255, 0.06)",
         "gridwidth": 1,
-        "linecolor": "rgba(255, 255, 255, 0.1)",
+        "linecolor": "rgba(255, 255, 255, 0.12)",
         "linewidth": 1,
-        "tickfont": {"color": "#8b8b8b", "size": 11},
+        "tickfont": {"color": "#a1a1aa", "size": 11},
         "title_font": {"color": "#ffffff", "size": 13, "family": "Inter, sans-serif"}
     },
     "legend": {
-        "font": {"color": "#8b8b8b", "size": 12},
-        "bgcolor": "rgba(30, 30, 30, 0.8)",
-        "bordercolor": "rgba(255, 255, 255, 0.08)",
+        "font": {"color": "#a1a1aa", "size": 12},
+        "bgcolor": "rgba(23, 23, 23, 0.9)",
+        "bordercolor": "rgba(255, 255, 255, 0.1)",
         "borderwidth": 1
     },
-    "colorway": ["#4d9fff", "#82b9ff", "#22d3ee", "#a78bfa", "#fbbf24", "#fb923c", "#f472b6", "#34d399"]
+    "colorway": ["#60a5fa", "#38bdf8", "#22d3ee", "#a78bfa", "#fbbf24", "#fb923c", "#f472b6", "#34d399"]
 }
 
 

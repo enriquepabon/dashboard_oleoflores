@@ -14,63 +14,63 @@ Este módulo contiene:
 
 COLORS = {
     # =========================================================================
-    # GOOGLE LANGUAGE EXPLORER STYLE - Minimal Dark Theme with Blue Accent
+    # GOOGLE LANGUAGE EXPLORER STYLE - Vibrant Blue Accent Theme
     # =========================================================================
     
-    # Fondos - Negro puro minimalista
-    "fondo": "#0e0e0e",                    # Fondo principal (negro puro)
-    "fondo_secundario": "#1a1a1a",         # Nivel secundario
-    "fondo_terciario": "#252525",          # Nivel adicional
-    "fondo_tarjeta": "#1e1e1e",            # Fondo de tarjetas
-    "fondo_glass": "rgba(255,255,255,0.05)", # Efecto sutil
-    "fondo_hover": "rgba(255,255,255,0.08)", # Hover states
+    # Fondos - Negro puro como la referencia
+    "fondo": "#0a0a0a",                    # Fondo principal (negro puro)
+    "fondo_secundario": "#171717",         # Nivel secundario
+    "fondo_terciario": "#1f1f1f",          # Nivel adicional
+    "fondo_tarjeta": "#171717",            # Fondo de tarjetas (más oscuro)
+    "fondo_glass": "rgba(255,255,255,0.03)", # Efecto sutil
+    "fondo_hover": "rgba(255,255,255,0.06)", # Hover states
     
-    # Colores principales - Azul como acento principal
-    "verde_oleo": "#4d9fff",               # Azul principal (reemplaza verde)
-    "verde_oscuro": "#3d7fcf",             # Azul oscuro para gradientes
-    "verde_glow": "rgba(77, 159, 255, 0.3)", # Azul para efectos glow
-    "dorado": "#fbbf24",                   # Amarillo/dorado para warnings
+    # Colores principales - Azul VIBRANTE como la referencia
+    "verde_oleo": "#60a5fa",               # Azul vibrante (Tailwind blue-400)
+    "verde_oscuro": "#3b82f6",             # Azul más intenso (blue-500)
+    "verde_glow": "rgba(96, 165, 250, 0.4)", # Azul glow
+    "dorado": "#fbbf24",                   # Amarillo para warnings
     "dorado_claro": "#fcd34d",             # Dorado para hover
-    "rojo_alerta": "#f87171",              # Rojo suave (alerta)
+    "rojo_alerta": "#f87171",              # Rojo (alerta)
     
-    # Texto - Alto Contraste
-    "texto_principal": "#ffffff",          # Texto blanco
-    "texto_secundario": "#8b8b8b",         # Gris para labels
-    "texto_muted": "#6b6b6b",              # Texto deshabilitado
+    # Texto - ALTO CONTRASTE
+    "texto_principal": "#ffffff",          # Blanco puro
+    "texto_secundario": "#a1a1aa",         # Gris más claro (mejor contraste)
+    "texto_muted": "#71717a",              # Texto secundario
     
-    # Acentos adicionales
-    "azul_info": "#4d9fff",                # Azul principal
+    # Acentos adicionales - Vibrantes
+    "azul_info": "#60a5fa",                # Azul vibrante
     "naranja": "#fb923c",                  # Naranja
-    "cyan": "#22d3ee",                     # Cyan
+    "cyan": "#22d3ee",                     # Cyan vibrante
     "purple": "#a78bfa",                   # Púrpura
     "rosa": "#f472b6",                     # Rosa
     
     # UI Elements
-    "gris_claro": "#2a2a2a",               # Bordes y separadores
-    "borde": "rgba(255,255,255,0.08)",     # Bordes sutiles
-    "borde_activo": "rgba(77,159,255,0.5)", # Borde con glow azul
-    "glass_border": "rgba(255,255,255,0.1)", # Bordes glass
-    "glass_shadow": "rgba(0,0,0,0.3)",     # Sombras
+    "gris_claro": "#27272a",               # Bordes (zinc-800)
+    "borde": "rgba(255,255,255,0.1)",      # Bordes más visibles
+    "borde_activo": "rgba(96,165,250,0.6)", # Borde azul activo
+    "glass_border": "rgba(255,255,255,0.12)", # Bordes sutiles
+    "glass_shadow": "rgba(0,0,0,0.5)",     # Sombras
 }
 
-# Paleta para gráficos - Azul como color primario
+# Paleta para gráficos - Azul vibrante como primario
 CHART_COLORS = [
-    "#4d9fff",  # Azul principal
-    "#82b9ff",  # Azul claro
+    "#60a5fa",  # Azul vibrante (primario)
+    "#38bdf8",  # Cyan/sky
     "#22d3ee",  # Cyan
     "#a78bfa",  # Púrpura
     "#fbbf24",  # Amarillo
-    "#fb923c",  # Naranja
+    "#fb923c",  # Naranja  
     "#f472b6",  # Rosa
-    "#34d399",  # Verde menta
+    "#34d399",  # Verde esmeralda
 ]
 
-# Colores para el diagrama Sankey - Usando tonos azules
+# Colores para el diagrama Sankey
 SANKEY_COLORS = {
     "cpo_entrada": "#fbbf24",     # Entrada CPO (dorado)
-    "refineria": "#4d9fff",       # Refinería (azul)
-    "oleina": "#22d3ee",          # Oleína (cyan)
-    "rbd": "#82b9ff",             # RBD (azul claro)
+    "refineria": "#60a5fa",       # Refinería (azul vibrante)
+    "oleina": "#38bdf8",          # Oleína (sky)
+    "rbd": "#22d3ee",             # RBD (cyan)
     "margarinas": "#a78bfa",      # Margarinas (púrpura)
     "mermas": "#f87171",          # Mermas (rojo)
 }
