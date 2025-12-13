@@ -105,14 +105,20 @@ def download_file_from_drive(file_id: str, credentials) -> str:
     temp_path = os.path.join(temp_dir, file_name)
     
     # Descargar según el tipo
-    if 'spreadsheet' in mime_type:
-        # Es un Google Sheets, exportar como Excel
+    # Google Sheets nativo: application/vnd.google-apps.spreadsheet
+    # Excel subido a Drive: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+    is_google_sheets = mime_type == 'application/vnd.google-apps.spreadsheet'
+    
+    if is_google_sheets:
+        # Es un Google Sheets nativo, exportar como Excel
+        print(f"   → Exportando Google Sheets como Excel...")
         request = service.files().export_media(
             fileId=file_id,
             mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     else:
-        # Es un archivo binario (Excel nativo)
+        # Es un archivo binario (Excel nativo .xlsx/.xls)
+        print(f"   → Descargando archivo Excel nativo...")
         request = service.files().get_media(fileId=file_id)
     
     # Descargar
