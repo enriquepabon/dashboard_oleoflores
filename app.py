@@ -56,6 +56,13 @@ from src.ai_chat import (
     render_chat_panel,
     render_data_selector
 )
+from src.auth import (
+    handle_authentication,
+    render_user_badge,
+    is_admin,
+    get_auth_status
+)
+from src.admin_panel import render_admin_sidebar_button
 
 # =============================================================================
 # 4.1 - CONFIGURACIÓN DE PÁGINA
@@ -83,6 +90,15 @@ st.set_page_config(
         """
     }
 )
+
+# =============================================================================
+# AUTENTICACIÓN - Google OAuth
+# =============================================================================
+# Verificar autenticación antes de mostrar cualquier contenido
+# Usuarios deben tener correo @oleoflores.com y estar autorizados
+
+if not handle_authentication():
+    st.stop()  # Detener ejecución si no está autenticado
 
 # =============================================================================
 # ESTILOS CSS PERSONALIZADOS
@@ -789,7 +805,6 @@ st.markdown("""
 # =============================================================================
 
 with st.sidebar:
-    # Logo y título
     st.markdown("""
     <div style="text-align: center; padding: 1rem 0;">
         <span style="font-size: 3rem;">🌴</span>
@@ -797,6 +812,16 @@ with st.sidebar:
         <p class="sidebar-subtitle">Business Intelligence Dashboard</p>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Mostrar información del usuario logueado
+    render_user_badge()
+    
+    # Panel de administración (solo visible para admins)
+    render_admin_sidebar_button()
+    
+    # Botón de cerrar sesión
+    if st.button("🚪 Cerrar Sesión", use_container_width=True, type="secondary"):
+        st.logout()
     
     st.divider()
 

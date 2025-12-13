@@ -1,0 +1,247 @@
+"""
+Panel de Administración - Oleoflores Dashboard
+===============================================
+
+Panel para gestionar usuarios autorizados del dashboard.
+Solo accesible por administradores.
+
+Nota: Debido a limitaciones de Streamlit Cloud, los cambios
+en usuarios requieren actualizar secrets.toml manualmente.
+"""
+
+import streamlit as st
+from src.auth import get_authorized_users, get_admin_users, is_admin, ALLOWED_DOMAIN
+
+# =============================================================================
+# PANEL DE ADMINISTRACIÓN
+# =============================================================================
+
+def render_admin_panel():
+    """
+    Renderiza el panel completo de administración.
+    Solo debe mostrarse a usuarios con permisos de admin.
+    """
+    email = getattr(st.user, 'email', None)
+    
+    if not is_admin(email):
+        st.error("⛔ No tienes permisos de administrador.")
+        return
+    
+    st.markdown("### 🔐 Panel de Administración")
+    
+    # Tabs para diferentes secciones
+    tab1, tab2, tab3 = st.tabs(["👥 Usuarios", "➕ Agregar", "📋 Configuración"])
+    
+    with tab1:
+        _render_user_list()
+    
+    with tab2:
+        _render_add_user_form()
+    
+    with tab3:
+        _render_config_generator()
+
+
+def _render_user_list():
+    """
+    Muestra la lista actual de usuarios autorizados.
+    """
+    authorized = get_authorized_users()
+    admins = get_admin_users()
+    
+    st.markdown("#### Usuarios Autorizados")
+    
+    if not authorized:
+        st.info("No hay usuarios autorizados configurados.")
+        return
+    
+    # Mostrar tabla de usuarios
+    st.markdown(f"**Total:** {len(authorized)} usuarios")
+    
+    for email in authorized:
+        role = "🔑 Admin" if email.lower() in [a.lower() for a in admins] else "👤 Usuario"
+        
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown(f"📧 `{email}`")
+        with col2:
+            st.markdown(f"*{role}*")
+    
+    st.divider()
+    
+    st.markdown("#### Administradores")
+    
+    if not admins:
+        st.warning("⚠️ No hay administradores configurados.")
+    else:
+        for email in admins:
+            st.markdown(f"🔑 `{email}`")
+
+
+def _render_add_user_form():
+    """
+    Formulario para agregar/eliminar usuarios.
+    Genera la configuración que debe copiarse a secrets.toml.
+    """
+    st.markdown("#### Gestionar Usuarios")
+    
+    st.info("""
+    ⚠️ **Nota importante:** Los cambios en usuarios requieren actualizar 
+    los secrets en Streamlit Cloud. Usa el tab "Configuración" para 
+    generar el código actualizado.
+    """)
+    
+    # Estado de sesión para usuarios pendientes
+    if 'pending_users' not in st.session_state:
+        st.session_state.pending_users = list(get_authorized_users())
+    
+    if 'pending_admins' not in st.session_state:
+        st.session_state.pending_admins = list(get_admin_users())
+    
+    # Agregar usuario
+    st.markdown("##### ➕ Agregar Usuario")
+    
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        new_email = st.text_input(
+            "Email del usuario",
+            placeholder=f"usuario@{ALLOWED_DOMAIN}",
+            key="new_user_email"
+        )
+    
+    with col2:
+        make_admin = st.checkbox("Admin", key="new_user_admin")
+    
+    if st.button("Agregar Usuario", type="primary", key="btn_add_user"):
+        if not new_email:
+            st.error("Por favor ingresa un email.")
+        elif not new_email.lower().endswith(f"@{ALLOWED_DOMAIN}"):
+            st.error(f"El email debe terminar en @{ALLOWED_DOMAIN}")
+        elif new_email.lower() in [e.lower() for e in st.session_state.pending_users]:
+            st.warning("Este usuario ya está en la lista.")
+        else:
+            st.session_state.pending_users.append(new_email.lower())
+            if make_admin:
+                st.session_state.pending_admins.append(new_email.lower())
+            st.success(f"✅ Usuario {new_email} agregado a la lista pendiente.")
+            st.rerun()
+    
+    # Eliminar usuario
+    st.markdown("##### ➖ Eliminar Usuario")
+    
+    if st.session_state.pending_users:
+        user_to_remove = st.selectbox(
+            "Seleccionar usuario a eliminar",
+            options=st.session_state.pending_users,
+            key="user_to_remove"
+        )
+        
+        if st.button("Eliminar Usuario", type="secondary", key="btn_remove_user"):
+            st.session_state.pending_users.remove(user_to_remove)
+            if user_to_remove in st.session_state.pending_admins:
+                st.session_state.pending_admins.remove(user_to_remove)
+            st.success(f"✅ Usuario {user_to_remove} eliminado de la lista pendiente.")
+            st.rerun()
+    else:
+        st.info("No hay usuarios en la lista pendiente.")
+    
+    # Mostrar lista pendiente
+    st.divider()
+    st.markdown("##### 📝 Lista Pendiente de Cambios")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Usuarios:**")
+        for u in st.session_state.pending_users:
+            st.markdown(f"- `{u}`")
+    
+    with col2:
+        st.markdown("**Admins:**")
+        for a in st.session_state.pending_admins:
+            st.markdown(f"- `{a}`")
+
+
+def _render_config_generator():
+    """
+    Genera la configuración TOML para copiar a Streamlit Cloud secrets.
+    """
+    st.markdown("#### 📋 Generar Configuración")
+    
+    st.markdown("""
+    Copia el siguiente código y pégalo en los **secrets** de tu app 
+    en [Streamlit Cloud](https://share.streamlit.io/).
+    """)
+    
+    # Obtener usuarios (de pendientes si existen, si no de los actuales)
+    users = st.session_state.get('pending_users', get_authorized_users())
+    admins = st.session_state.get('pending_admins', get_admin_users())
+    
+    # Generar configuración TOML
+    users_str = ',\n    '.join([f'"{u}"' for u in users])
+    admins_str = ',\n    '.join([f'"{a}"' for a in admins])
+    
+    config = f'''# ===========================================
+# Autenticación Google OAuth
+# ===========================================
+
+[auth]
+redirect_uri = "https://TU-APP.streamlit.app/oauth2callback"
+cookie_secret = "GENERA_UN_SECRET_SEGURO"
+client_id = "TU_CLIENT_ID"
+client_secret = "TU_CLIENT_SECRET"
+server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
+
+# Lista de usuarios autorizados
+[auth.users]
+authorized = [
+    {users_str}
+]
+
+# Administradores
+admins = [
+    {admins_str}
+]'''
+    
+    st.code(config, language="toml")
+    
+    # Instrucciones
+    with st.expander("📖 Instrucciones para actualizar"):
+        st.markdown("""
+        ### Pasos para actualizar usuarios:
+        
+        1. **Copia** el código de arriba
+        2. Ve a [Streamlit Cloud](https://share.streamlit.io/)
+        3. Abre tu app y ve a **Settings > Secrets**
+        4. **Reemplaza** la sección `[auth.users]` con el código copiado
+        5. Guarda los cambios
+        6. La app se reiniciará automáticamente con los nuevos usuarios
+        
+        ### Generar cookie_secret seguro:
+        ```python
+        import secrets
+        print(secrets.token_hex(32))
+        ```
+        """)
+    
+    # Botón para resetear cambios pendientes
+    if st.button("🔄 Resetear a configuración actual", key="btn_reset"):
+        st.session_state.pending_users = list(get_authorized_users())
+        st.session_state.pending_admins = list(get_admin_users())
+        st.success("Lista reseteada a la configuración actual.")
+        st.rerun()
+
+
+def render_admin_sidebar_button():
+    """
+    Renderiza el botón/expander de administración para el sidebar.
+    Solo visible para administradores.
+    """
+    email = getattr(st.user, 'email', None)
+    
+    if not is_admin(email):
+        return
+    
+    with st.expander("🔐 Administración", expanded=False):
+        render_admin_panel()
