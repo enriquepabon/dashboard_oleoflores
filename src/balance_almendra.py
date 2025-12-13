@@ -185,7 +185,10 @@ def process_file_with_gemini(file_path: str, api_key: str) -> Dict[str, Any]:
     
     # Configurar API
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # Usar modelo con soporte para visión
+    # gemini-1.5-flash-latest soporta imágenes
+    model = genai.GenerativeModel('gemini-2.0-flash')
     
     # Determinar tipo de archivo
     ext = os.path.splitext(file_path)[1].lower()
@@ -423,7 +426,7 @@ def generate_balance_analysis(reports_data: List[Dict[str, Any]]) -> str:
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content(analysis_prompt)
         return response.text
     except Exception as e:
