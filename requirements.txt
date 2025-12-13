@@ -30,3 +30,4 @@ python-dotenv>=1.0.0        # Para cargar API keys desde .env
 # Google Drive Sync (actualización automática de datos)
 google-api-python-client>=2.100.0  # API de Google Drive
 google-auth>=2.20.0                 # Autenticación con Service Account
+pymupdf

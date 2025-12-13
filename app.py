@@ -905,7 +905,7 @@ with st.sidebar:
     
     vista_seleccionada = st.radio(
         "Seleccionar Vista",
-        options=["🏠 Resumen Ejecutivo", "🌾 Upstream", "🏭 Downstream"],
+        options=["🏠 Resumen Ejecutivo", "🌾 Upstream", "🏭 Downstream", "🥜 Balance Almendra"],
         index=0,
         label_visibility="collapsed"
     )
@@ -2057,6 +2057,288 @@ elif vista_seleccionada == "🏭 Downstream":
                 )
     else:
         st.info("📭 No hay datos de Downstream disponibles.")
+
+# =============================================================================
+# VISTA: BALANCE ALMENDRA
+# =============================================================================
+
+elif vista_seleccionada == "🥜 Balance Almendra":
+    
+    st.header("🥜 Balance Almendra")
+    st.markdown("Procesamiento diario de nuez, almendra y CKPO de todas las plantas.")
+    
+    # Importar módulo de balance
+    try:
+        from src.balance_almendra import (
+            process_file_with_gemini, 
+            save_daily_balance, 
+            get_daily_balance,
+            generate_balance_analysis,
+            get_api_key,
+            PLANTAS_CONFIG
+        )
+        BALANCE_MODULE_AVAILABLE = True
+    except ImportError as e:
+        BALANCE_MODULE_AVAILABLE = False
+        st.error(f"❌ Módulo de balance no disponible: {e}")
+    
+    if BALANCE_MODULE_AVAILABLE:
+        
+        # Verificar API key
+        api_key = get_api_key()
+        if not api_key:
+            st.warning("⚠️ GOOGLE_API_KEY no configurada. Necesaria para procesar reportes con IA.")
+        
+        # Tabs principales
+        tab_carga, tab_balance, tab_historial = st.tabs([
+            "📤 Cargar Reportes", 
+            "📊 Balance del Día",
+            "📈 Historial"
+        ])
+        
+        # =====================================================================
+        # TAB: CARGA DE REPORTES
+        # =====================================================================
+        with tab_carga:
+            st.markdown("### 📤 Cargar Reportes Diarios")
+            st.markdown("Sube los 4 reportes de las plantas para procesar el balance del día.")
+            
+            # Layout de 4 columnas para los uploads
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**🏭 CZZ (Codazzi) - Expellers**")
+                file_czz = st.file_uploader(
+                    "Reporte CZZ",
+                    type=['pdf', 'png', 'jpg'],
+                    key="balance_czz",
+                    label_visibility="collapsed"
+                )
+                
+                st.markdown("**🌴 A&G (Aceites & Grasas)**")
+                file_ag = st.file_uploader(
+                    "Reporte A&G",
+                    type=['pdf', 'png', 'jpg'],
+                    key="balance_ag",
+                    label_visibility="collapsed"
+                )
+            
+            with col2:
+                st.markdown("**🌾 MLB (María La Baja)**")
+                file_mlb = st.file_uploader(
+                    "Reporte MLB",
+                    type=['pdf', 'png', 'jpg'],
+                    key="balance_mlb",
+                    label_visibility="collapsed"
+                )
+                
+                st.markdown("**🚛 SINÚ (Transporte)**")
+                file_sinu = st.file_uploader(
+                    "Reporte Sinú",
+                    type=['pdf', 'png', 'jpg'],
+                    key="balance_sinu",
+                    label_visibility="collapsed"
+                )
+            
+            # Contador de archivos
+            archivos_cargados = sum([1 for f in [file_czz, file_ag, file_mlb, file_sinu] if f is not None])
+            st.info(f"📁 {archivos_cargados}/4 archivos cargados")
+            
+            # Botón de procesamiento
+            if archivos_cargados > 0:
+                if st.button("🤖 Procesar con IA", type="primary", use_container_width=True, disabled=not api_key):
+                    
+                    import tempfile
+                    
+                    resultados = []
+                    archivos_map = {
+                        'CZZ': file_czz,
+                        'A&G': file_ag,
+                        'MLB': file_mlb,
+                        'SINU': file_sinu
+                    }
+                    
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    for i, (planta, archivo) in enumerate(archivos_map.items()):
+                        if archivo is not None:
+                            status_text.text(f"🔄 Procesando {planta}...")
+                            
+                            # Guardar archivo temporal
+                            ext = archivo.name.split('.')[-1]
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{ext}') as tmp:
+                                tmp.write(archivo.getvalue())
+                                tmp_path = tmp.name
+                            
+                            try:
+                                # Procesar con IA
+                                data = process_file_with_gemini(tmp_path, api_key)
+                                data['planta'] = planta  # Asegurar nombre de planta
+                                resultados.append(data)
+                                
+                                if 'error' in data:
+                                    st.warning(f"⚠️ {planta}: {data['error']}")
+                                else:
+                                    st.success(f"✅ {planta} procesado correctamente")
+                                    
+                            except Exception as e:
+                                st.error(f"❌ Error procesando {planta}: {str(e)}")
+                                resultados.append({'error': str(e), 'planta': planta})
+                            finally:
+                                os.unlink(tmp_path)
+                        
+                        progress_bar.progress((i + 1) / 4)
+                    
+                    status_text.text("✨ Procesamiento completado")
+                    
+                    # Guardar resultados
+                    if resultados:
+                        df_balance = save_daily_balance(resultados)
+                        if df_balance is not None:
+                            st.session_state['balance_results'] = resultados
+                            st.success(f"💾 Datos guardados: {len(df_balance)} registros")
+                            
+                            # Generar análisis
+                            with st.spinner("🤖 Generando análisis IA..."):
+                                analisis = generate_balance_analysis(resultados)
+                                st.session_state['balance_analysis'] = analisis
+                            
+                            st.rerun()
+        
+        # =====================================================================
+        # TAB: BALANCE DEL DÍA
+        # =====================================================================
+        with tab_balance:
+            st.markdown("### 📊 Balance del Día")
+            
+            # Cargar datos del día más reciente
+            df_balance = get_daily_balance()
+            
+            if df_balance.empty:
+                st.info("📭 No hay datos de balance. Carga los reportes en la pestaña anterior.")
+            else:
+                fecha_balance = df_balance['fecha'].iloc[0]
+                st.markdown(f"**📅 Fecha: {fecha_balance}**")
+                
+                # KPIs principales
+                st.markdown("#### 📈 Resumen General")
+                
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    nuez_total = df_balance['nuez_inventario_kg'].sum()
+                    st.metric("🌰 Inventario Nuez", f"{nuez_total/1000:,.1f} Ton")
+                
+                with col2:
+                    almendra_total = df_balance['almendra_inventario_silos_kg'].sum()
+                    st.metric("🥜 Almendra en Silos", f"{almendra_total/1000:,.1f} Ton")
+                
+                with col3:
+                    almendra_emp = df_balance['almendra_inventario_empacada_kg'].sum()
+                    st.metric("📦 Almendra Empacada", f"{almendra_emp/1000:,.1f} Ton")
+                
+                with col4:
+                    ckpo_total = df_balance['ckpo_inventario_kg'].sum()
+                    st.metric("🛢️ CKPO Inventario", f"{ckpo_total/1000:,.1f} Ton")
+                
+                st.divider()
+                
+                # Tablas de detalle
+                col_izq, col_der = st.columns(2)
+                
+                with col_izq:
+                    st.markdown("#### 🌰 Procesamiento de Nuez")
+                    df_nuez = df_balance[['planta', 'nuez_entrada_kg', 'nuez_consumo_kg', 'nuez_inventario_kg']].copy()
+                    df_nuez.columns = ['Planta', 'Entrada (kg)', 'Consumo (kg)', 'Inventario (kg)']
+                    st.dataframe(df_nuez, use_container_width=True, hide_index=True)
+                    
+                    st.markdown("#### 🥜 Procesamiento de Almendra")
+                    df_almendra = df_balance[['planta', 'almendra_produccion_kg', 'almendra_traslado_expeller_kg', 'almendra_inventario_silos_kg']].copy()
+                    df_almendra.columns = ['Planta', 'Producción (kg)', 'Traslado Exp. (kg)', 'Inv. Silos (kg)']
+                    st.dataframe(df_almendra, use_container_width=True, hide_index=True)
+                
+                with col_der:
+                    st.markdown("#### 🛢️ CKPO (Expellers)")
+                    df_ckpo = df_balance[['planta', 'ckpo_produccion_kg', 'ckpo_despacho_kg', 'ckpo_inventario_kg']].copy()
+                    df_ckpo.columns = ['Planta', 'Producción (kg)', 'Despacho (kg)', 'Inventario (kg)']
+                    st.dataframe(df_ckpo, use_container_width=True, hide_index=True)
+                    
+                    st.markdown("#### 🍞 Torta de Palmiste")
+                    df_torta = df_balance[['planta', 'torta_produccion_kg', 'torta_despacho_kg', 'torta_inventario_kg']].copy()
+                    df_torta.columns = ['Planta', 'Producción (kg)', 'Despacho (kg)', 'Inventario (kg)']
+                    st.dataframe(df_torta, use_container_width=True, hide_index=True)
+                
+                # Análisis IA
+                st.divider()
+                st.markdown("#### 🤖 Análisis IA")
+                
+                if 'balance_analysis' in st.session_state:
+                    st.markdown(st.session_state['balance_analysis'])
+                else:
+                    # Intentar generar análisis desde datos guardados
+                    if 'balance_results' in st.session_state:
+                        with st.spinner("Generando análisis..."):
+                            analisis = generate_balance_analysis(st.session_state['balance_results'])
+                            st.markdown(analisis)
+                    else:
+                        st.info("El análisis se generará cuando proceses nuevos reportes.")
+        
+        # =====================================================================
+        # TAB: HISTORIAL
+        # =====================================================================
+        with tab_historial:
+            st.markdown("### 📈 Historial de Balance")
+            
+            # Cargar todos los datos
+            balance_path = "data/balance_almendra.csv"
+            if os.path.exists(balance_path):
+                df_historico = pd.read_csv(balance_path)
+                
+                if not df_historico.empty:
+                    # Selector de fecha
+                    fechas_disponibles = sorted(df_historico['fecha'].unique(), reverse=True)
+                    fecha_sel = st.selectbox(
+                        "Seleccionar fecha",
+                        options=fechas_disponibles,
+                        index=0
+                    )
+                    
+                    # Mostrar datos de la fecha seleccionada
+                    df_fecha = df_historico[df_historico['fecha'] == fecha_sel]
+                    
+                    st.markdown(f"**📅 Balance del {fecha_sel}**")
+                    st.dataframe(df_fecha, use_container_width=True, hide_index=True)
+                    
+                    # Gráfico de tendencia
+                    st.markdown("#### 📊 Tendencia de Inventarios")
+                    
+                    df_trend = df_historico.groupby('fecha').agg({
+                        'nuez_inventario_kg': 'sum',
+                        'almendra_inventario_silos_kg': 'sum',
+                        'ckpo_inventario_kg': 'sum'
+                    }).reset_index()
+                    
+                    import plotly.express as px
+                    
+                    fig = px.line(
+                        df_trend, 
+                        x='fecha', 
+                        y=['nuez_inventario_kg', 'almendra_inventario_silos_kg', 'ckpo_inventario_kg'],
+                        labels={'value': 'Kilogramos', 'fecha': 'Fecha', 'variable': 'Producto'},
+                        title='Evolución de Inventarios'
+                    )
+                    fig.update_layout(
+                        template='plotly_dark',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)'
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("📭 No hay datos históricos disponibles.")
+            else:
+                st.info("📭 Aún no se han procesado reportes. Carga los reportes diarios para comenzar.")
+
 
 # =============================================================================
 # FOOTER
