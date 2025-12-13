@@ -8,6 +8,10 @@ Visualización de la cadena de valor Farm-to-Fork.
 Ejecutar con: streamlit run app.py
 """
 
+# Cargar variables de entorno desde .env (DEBE ir antes de otros imports)
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
@@ -45,6 +49,13 @@ from src.utils import (
     export_to_csv,
     prepare_export_data
 )
+from src.ai_chat import (
+    initialize_chat_session,
+    add_data_to_context,
+    remove_data_from_context,
+    render_chat_panel,
+    render_data_selector
+)
 
 # =============================================================================
 # 4.1 - CONFIGURACIÓN DE PÁGINA
@@ -78,103 +89,795 @@ st.set_page_config(
 # =============================================================================
 
 st.markdown("""
+<!-- Preconnect hints for faster font loading -->
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- Preload critical fonts to reduce CLS -->
+<link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- Skip Navigation Link for Accessibility -->
+<a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
 <style>
-    /* Fondo principal */
+    /* =========================================================================
+       OLEOFLORES BI DASHBOARD - PREMIUM GLASSMORPHISM EDITION
+       ========================================================================= */
+    
+    /* Import Google Fonts with font-display: swap for performance */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    /* -------------------------------------------------------------------------
+       KEYFRAME ANIMATIONS
+       ------------------------------------------------------------------------- */
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    @keyframes glowPulse {
+        0%, 100% {
+            box-shadow: 0 0 20px rgba(0, 214, 143, 0.15);
+        }
+        50% {
+            box-shadow: 0 0 40px rgba(0, 214, 143, 0.3);
+        }
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+    
+    @keyframes borderGlow {
+        0%, 100% { border-color: rgba(0, 214, 143, 0.3); }
+        50% { border-color: rgba(0, 214, 143, 0.6); }
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+    }
+    
+    /* -------------------------------------------------------------------------
+       ACCESSIBILITY - SKIP LINK (oculto por diseño)
+       ------------------------------------------------------------------------- */
+    
+    .skip-link {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+        background: linear-gradient(135deg, #00d68f 0%, #00b377 100%);
+        color: #0d1117;
+        padding: 10px 20px;
+        font-weight: 700;
+        z-index: 10000;
+        border-radius: 0 0 12px 0;
+        text-decoration: none;
+        transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        visibility: hidden;
+    }
+    
+    .skip-link:focus {
+        top: -9999px;
+        visibility: hidden;
+        outline: none;
+        outline-offset: 2px;
+    }
+    
+    /* -------------------------------------------------------------------------
+       ACCESSIBILITY - FOCUS STYLES
+       ------------------------------------------------------------------------- */
+    
+    *:focus-visible {
+        outline: 2px solid #00d68f;
+        outline-offset: 3px;
+    }
+    
+    button:focus-visible,
+    [role="button"]:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+        outline: 3px solid #00d68f;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 8px rgba(0, 214, 143, 0.15);
+    }
+    
+    /* -------------------------------------------------------------------------
+       BASE STYLES - PREMIUM DARK MODE
+       ------------------------------------------------------------------------- */
+    
+    /* Fondo principal con gradiente premium + aurora effect */
     .stApp {
-        background-color: #f9f9f9;
+        background: 
+            radial-gradient(ellipse at 20% 20%, rgba(0, 214, 143, 0.15) 0%, transparent 40%),
+            radial-gradient(ellipse at 80% 80%, rgba(255, 170, 0, 0.12) 0%, transparent 40%),
+            radial-gradient(ellipse at 50% 50%, rgba(88, 166, 255, 0.08) 0%, transparent 50%),
+            linear-gradient(180deg, #0d1117 0%, #161b22 30%, #1c2128 70%, #0d1117 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        min-height: 100vh;
     }
     
-    /* Estilo para métricas/scorecards */
-    div[data-testid="metric-container"] {
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    /* Headers principales con animación NEON */
+    .stApp h1, .stApp h2, .stApp h3 {
+        color: #f0f6fc !important;
+        font-weight: 700;
+        letter-spacing: -0.02em;
     }
     
-    /* Sidebar */
+    .stApp h1 {
+        background: linear-gradient(135deg, #00d68f 0%, #39d353 25%, #0bc5ea 50%, #58a6ff 75%, #ffaa00 100%);
+        background-size: 300% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 3rem !important;
+        font-weight: 800 !important;
+        animation: shimmer 3s linear infinite;
+        text-shadow: 0 0 40px rgba(0, 214, 143, 0.3);
+    }
+    
+    .stApp h2 {
+        font-size: 1.75rem !important;
+        color: #f0f6fc !important;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .stApp h3 {
+        font-size: 1.25rem !important;
+        color: #c9d1d9 !important;
+    }
+    
+    /* Texto general - ALTO CONTRASTE WCAG AAA */
+    .stApp, .stApp p, .stApp span, .stApp label {
+        color: #c9d1d9;
+        line-height: 1.6;
+    }
+    
+    .stMarkdown {
+        color: #c9d1d9;
+    }
+    
+    .stMarkdown p {
+        margin-bottom: 0.75rem;
+    }
+    
+    /* -------------------------------------------------------------------------
+       SIDEBAR - GLASSMORPHISM PREMIUM
+       ------------------------------------------------------------------------- */
+    
     section[data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #e0e0e0;
+        background: 
+            linear-gradient(180deg, rgba(22, 27, 34, 0.98) 0%, rgba(13, 17, 23, 0.98) 100%) !important;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
     }
     
     section[data-testid="stSidebar"] > div {
         padding-top: 1rem;
     }
     
-    /* Títulos de sección en sidebar */
-    .sidebar-title {
-        color: #2E7D32;
-        font-size: 1.5rem;
+    section[data-testid="stSidebar"] .stMarkdown h3 {
+        color: #00d68f !important;
+        font-size: 0.8rem;
         font-weight: 700;
-        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-top: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(0, 214, 143, 0.2);
+    }
+    
+    /* Sidebar title styling */
+    .sidebar-title {
+        color: #f0f6fc !important;
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 0.25rem;
+        background: linear-gradient(135deg, #00d68f 0%, #0bc5ea 50%, #ffaa00 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 4s linear infinite;
     }
     
     .sidebar-subtitle {
-        color: #666666;
+        color: #8b949e !important;
         font-size: 0.85rem;
         margin-bottom: 1.5rem;
+        letter-spacing: 0.08em;
+        font-weight: 500;
     }
     
-    /* Botones */
+    /* -------------------------------------------------------------------------
+       METRIC CARDS - GLASSMORPHISM + GLOW + ANIMATION
+       ------------------------------------------------------------------------- */
+    
+    div[data-testid="metric-container"] {
+        background: 
+            linear-gradient(135deg, 
+                rgba(0, 214, 143, 0.08) 0%,
+                rgba(255, 255, 255, 0.1) 50%, 
+                rgba(88, 166, 255, 0.06) 100%);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 2px solid rgba(0, 214, 143, 0.25);
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.5),
+            0 0 40px rgba(0, 214, 143, 0.15),
+            0 0 80px rgba(0, 214, 143, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeInUp 0.6s ease-out, glowPulse 4s ease-in-out infinite;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Neon glow border effect */
+    div[data-testid="metric-container"]::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(135deg, #00d68f, #0bc5ea, #ffaa00, #00d68f);
+        background-size: 400% 400%;
+        border-radius: 26px;
+        z-index: -1;
+        opacity: 0.3;
+        animation: shimmer 6s linear infinite;
+    }
+    
+    /* Shimmer sweep effect */
+    div[data-testid="metric-container"]::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg, 
+            transparent, 
+            rgba(255, 255, 255, 0.1), 
+            transparent
+        );
+        transition: left 0.6s ease;
+    }
+    
+    div[data-testid="metric-container"]:hover::after {
+        left: 100%;
+    }
+    
+    div[data-testid="metric-container"]:hover {
+        border-color: rgba(0, 214, 143, 0.6);
+        box-shadow: 
+            0 16px 48px rgba(0, 0, 0, 0.6),
+            0 0 60px rgba(0, 214, 143, 0.3),
+            0 0 120px rgba(0, 214, 143, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        transform: translateY(-6px) scale(1.03);
+    }
+    
+    div[data-testid="metric-container"] label {
+        color: #c9d1d9 !important;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+        color: #f0f6fc !important;
+        font-weight: 800;
+        font-size: 2.2rem !important;
+        letter-spacing: -0.02em;
+    }
+    
+    div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    /* Positive delta styling */
+    div[data-testid="metric-container"] [data-testid="stMetricDelta"] svg {
+        fill: currentColor;
+    }
+    
+    /* -------------------------------------------------------------------------
+       BUTTONS - GRADIENT STYLE + ANIMATIONS
+       ------------------------------------------------------------------------- */
+    
     .stButton > button {
-        background-color: #2E7D32;
-        color: white;
+        background: linear-gradient(135deg, #00d68f 0%, #00b377 100%);
+        color: #0d1117;
         border: none;
-        border-radius: 5px;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
+        border-radius: 12px;
+        padding: 0.75rem 1.75rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 
+            0 4px 15px rgba(0, 214, 143, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stButton > button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg, 
+            transparent, 
+            rgba(255, 255, 255, 0.3), 
+            transparent
+        );
+        transition: left 0.5s ease;
+    }
+    
+    .stButton > button:hover::before {
+        left: 100%;
     }
     
     .stButton > button:hover {
-        background-color: #1B5E20;
-        color: white;
+        background: linear-gradient(135deg, #00b377 0%, #00d68f 100%);
+        box-shadow: 
+            0 8px 30px rgba(0, 214, 143, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transform: translateY(-3px);
     }
     
-    /* Radio buttons estilizados */
-    div[data-testid="stRadio"] > label {
-        font-weight: 500;
-        color: #333333;
+    .stButton > button:active {
+        transform: translateY(-1px);
     }
     
-    /* Separadores */
-    hr {
-        margin: 1rem 0;
+    /* Download buttons */
+    .stDownloadButton > button {
+        background: linear-gradient(135deg, #ffaa00 0%, #f0883e 100%);
+        color: #0d1117;
         border: none;
-        border-top: 1px solid #e0e0e0;
+        border-radius: 12px;
+        font-weight: 700;
+        box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4);
     }
     
-    /* Cards/Contenedores */
-    .chart-container {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 1rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        margin-bottom: 1rem;
+    .stDownloadButton > button:hover {
+        box-shadow: 0 8px 30px rgba(255, 170, 0, 0.5);
+        transform: translateY(-3px);
     }
     
-    /* Alertas personalizadas */
+    /* -------------------------------------------------------------------------
+       FORM ELEMENTS - GLASSMORPHISM
+       ------------------------------------------------------------------------- */
+    
+    /* Select boxes */
+    .stSelectbox > div > div {
+        background: rgba(22, 27, 34, 0.9) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        color: #f0f6fc;
+        transition: all 0.3s ease;
+    }
+    
+    .stSelectbox > div > div:hover {
+        border-color: rgba(0, 214, 143, 0.5);
+        box-shadow: 0 0 20px rgba(0, 214, 143, 0.1);
+    }
+    
+    /* Multiselect */
+    .stMultiSelect > div > div {
+        background: rgba(22, 27, 34, 0.9) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+    }
+    
+    /* Checkbox */
+    .stCheckbox label span {
+        color: #c9d1d9 !important;
+        font-weight: 500;
+    }
+    
+    /* Radio buttons */
+    div[data-testid="stRadio"] > label {
+        color: #c9d1d9 !important;
+        font-weight: 600;
+    }
+    
+    div[data-testid="stRadio"] label[data-checked="true"] {
+        color: #00d68f !important;
+    }
+    
+    /* File uploader */
+    .stFileUploader {
+        background: rgba(22, 27, 34, 0.6);
+        backdrop-filter: blur(10px);
+        border: 2px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stFileUploader:hover {
+        border-color: rgba(0, 214, 143, 0.5);
+        background: rgba(22, 27, 34, 0.8);
+        box-shadow: 0 0 30px rgba(0, 214, 143, 0.1);
+    }
+    
+    /* -------------------------------------------------------------------------
+       DIVIDERS & SEPARATORS
+       ------------------------------------------------------------------------- */
+    
+    hr {
+        margin: 2rem 0;
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, 
+            transparent, 
+            rgba(255, 255, 255, 0.1) 20%, 
+            rgba(0, 214, 143, 0.3) 50%, 
+            rgba(255, 255, 255, 0.1) 80%, 
+            transparent);
+    }
+    
+    .stDivider {
+        background: linear-gradient(90deg, 
+            transparent, 
+            rgba(255, 255, 255, 0.1), 
+            transparent) !important;
+    }
+    
+    /* -------------------------------------------------------------------------
+       EXPANDERS - GLASSMORPHISM
+       ------------------------------------------------------------------------- */
+    
+    .streamlit-expanderHeader {
+        background: rgba(22, 27, 34, 0.8) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: #f0f6fc !important;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        border-color: rgba(0, 214, 143, 0.4);
+        background: rgba(22, 27, 34, 0.9) !important;
+    }
+    
+    .streamlit-expanderContent {
+        background: rgba(22, 27, 34, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    /* -------------------------------------------------------------------------
+       DATA TABLES - PREMIUM GLASSMORPHISM
+       ------------------------------------------------------------------------- */
+    
+    .stDataFrame {
+        background: 
+            linear-gradient(135deg, 
+                rgba(0, 214, 143, 0.05) 0%,
+                rgba(255, 255, 255, 0.08) 50%, 
+                rgba(88, 166, 255, 0.04) 100%);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 2px solid rgba(0, 214, 143, 0.2);
+        border-radius: 20px;
+        overflow: hidden;
+        animation: fadeInUp 0.5s ease-out;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            0 0 40px rgba(0, 214, 143, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .stDataFrame [data-testid="stDataFrameResizable"] {
+        background: transparent !important;
+    }
+    
+    /* Premium table headers with neon glow */
+    .stDataFrame thead th,
+    .stDataFrame [data-testid="glideDataEditor"] [role="columnheader"] {
+        background: linear-gradient(135deg, 
+            rgba(0, 214, 143, 0.35) 0%, 
+            rgba(0, 179, 119, 0.25) 100%) !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        font-size: 0.9rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 18px 16px !important;
+        border-bottom: 3px solid rgba(0, 214, 143, 0.5) !important;
+        text-shadow: 0 0 10px rgba(0, 214, 143, 0.3);
+    }
+    
+    /* Table rows with glow on hover */
+    .stDataFrame tbody tr,
+    .stDataFrame [data-testid="glideDataEditor"] [role="row"] {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .stDataFrame tbody tr:hover,
+    .stDataFrame [data-testid="glideDataEditor"] [role="row"]:hover {
+        background: linear-gradient(90deg, rgba(0, 214, 143, 0.12), rgba(0, 214, 143, 0.06)) !important;
+        transform: scale(1.01);
+        box-shadow: 0 0 20px rgba(0, 214, 143, 0.1);
+    }
+    
+    /* Table cells */
+    .stDataFrame td,
+    .stDataFrame [data-testid="glideDataEditor"] [role="gridcell"] {
+        color: #c9d1d9 !important;
+        font-size: 0.9rem;
+        padding: 12px 16px !important;
+    }
+    
+    /* -------------------------------------------------------------------------
+       ALERTS & MESSAGES - GLASSMORPHISM
+       ------------------------------------------------------------------------- */
+    
+    .stAlert {
+        border-radius: 16px;
+        border: none;
+        backdrop-filter: blur(10px);
+        animation: fadeInUp 0.4s ease-out;
+    }
+    
     .alert-warning {
-        background-color: #FFF3E0;
-        border-left: 4px solid #F9A825;
-        padding: 1rem;
-        border-radius: 0 5px 5px 0;
+        background: 
+            linear-gradient(135deg, 
+                rgba(255, 170, 0, 0.15) 0%, 
+                rgba(240, 136, 62, 0.1) 100%);
+        border-left: 4px solid #ffaa00;
+        padding: 1.25rem;
+        border-radius: 0 16px 16px 0;
+        box-shadow: 0 4px 20px rgba(255, 170, 0, 0.1);
     }
     
     .alert-error {
-        background-color: #FFEBEE;
-        border-left: 4px solid #C62828;
-        padding: 1rem;
-        border-radius: 0 5px 5px 0;
+        background: 
+            linear-gradient(135deg, 
+                rgba(255, 107, 107, 0.15) 0%, 
+                rgba(245, 101, 101, 0.1) 100%);
+        border-left: 4px solid #ff6b6b;
+        padding: 1.25rem;
+        border-radius: 0 16px 16px 0;
+        box-shadow: 0 4px 20px rgba(255, 107, 107, 0.1);
     }
     
     .alert-success {
-        background-color: #E8F5E9;
-        border-left: 4px solid #2E7D32;
-        padding: 1rem;
-        border-radius: 0 5px 5px 0;
+        background: 
+            linear-gradient(135deg, 
+                rgba(0, 214, 143, 0.15) 0%, 
+                rgba(0, 179, 119, 0.1) 100%);
+        border-left: 4px solid #00d68f;
+        padding: 1.25rem;
+        border-radius: 0 16px 16px 0;
+        box-shadow: 0 4px 20px rgba(0, 214, 143, 0.1);
     }
+    
+    /* -------------------------------------------------------------------------
+       TABS - GLASSMORPHISM + ANIMATION
+       ------------------------------------------------------------------------- */
+    
+    .stTabs [data-baseweb="tab-list"] {
+        background: rgba(22, 27, 34, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 6px;
+        gap: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        color: #c9d1d9;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 10px 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #f0f6fc;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #00d68f 0%, #00b377 100%) !important;
+        color: #0d1117 !important;
+        box-shadow: 0 4px 15px rgba(0, 214, 143, 0.4);
+    }
+    
+    /* -------------------------------------------------------------------------
+       PLOTLY CHARTS CONTAINER - GLASSMORPHISM
+       ------------------------------------------------------------------------- */
+    
+    .js-plotly-plot {
+        border-radius: 16px;
+        overflow: hidden;
+        animation: fadeInScale 0.5s ease-out;
+    }
+    
+    .js-plotly-plot .plotly {
+        border-radius: 16px;
+    }
+    
+    /* Chart containers with glass effect */
+    .stPlotlyChart {
+        background: rgba(22, 27, 34, 0.4);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s ease;
+    }
+    
+    .stPlotlyChart:hover {
+        border-color: rgba(0, 214, 143, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* -------------------------------------------------------------------------
+       SCROLLBAR STYLING - PREMIUM
+       ------------------------------------------------------------------------- */
+    
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(22, 27, 34, 0.6);
+        border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, 
+            rgba(0, 214, 143, 0.4), 
+            rgba(0, 179, 119, 0.3));
+        border-radius: 5px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, 
+            rgba(0, 214, 143, 0.6), 
+            rgba(0, 179, 119, 0.5));
+        background-clip: content-box;
+    }
+    
+    /* -------------------------------------------------------------------------
+       CAPTIONS & SMALL TEXT
+       ------------------------------------------------------------------------- */
+    
+    .stCaption, small, .stApp small {
+        color: #8b949e !important;
+        font-size: 0.85rem;
+    }
+    
+    /* -------------------------------------------------------------------------
+       COLUMN CONTAINERS - ANIMATION
+       ------------------------------------------------------------------------- */
+    
+    .stApp .element-container {
+        animation: fadeInUp 0.5s ease-out;
+        animation-fill-mode: both;
+    }
+    
+    .stApp .element-container:nth-child(1) { animation-delay: 0.05s; }
+    .stApp .element-container:nth-child(2) { animation-delay: 0.1s; }
+    .stApp .element-container:nth-child(3) { animation-delay: 0.15s; }
+    .stApp .element-container:nth-child(4) { animation-delay: 0.2s; }
+    .stApp .element-container:nth-child(5) { animation-delay: 0.25s; }
+    
+    /* -------------------------------------------------------------------------
+       LAYOUT - SCROLL FIX (AGGRESSIVE)
+       ------------------------------------------------------------------------- */
+    
+    /* Force scroll on main container */
+    .stApp {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        height: auto !important;
+    }
+    
+    .stApp > div:first-child {
+        overflow: visible !important;
+        height: auto !important;
+    }
+    
+    .stApp .stMainBlockContainer,
+    .stApp .block-container {
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+    
+    /* Main content area */
+    .stApp .stMain,
+    .stApp [data-testid="stAppViewContainer"],
+    .stApp [data-testid="stVerticalBlock"] {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        height: auto !important;
+    }
+    
+    section[data-testid="stSidebar"] {
+        width: 320px !important;
+        min-width: 320px !important;
+        overflow-y: auto !important;
+    }
+    
+    .stStatusWidget {
+        min-height: 24px;
+    }
+    
+    /* Ocultar barra de progreso verde superior */
+    .stApp > header {
+        background: transparent !important;
+    }
+    
+    [data-testid="stStatusWidget"],
+    .stProgress,
+    .stApp [data-testid="stDecoration"],
+    .stDeployButton,
+    div[data-testid="stDecoration"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        opacity: 0 !important;
+    }
+    
+    /* Ensure content flows naturally */
+    .stApp [data-testid="stVerticalBlockBorderWrapper"] {
+        height: auto !important;
+        min-height: auto !important;
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
@@ -378,8 +1081,56 @@ with st.sidebar:
 
     st.markdown("### 📤 Cargar Datos")
     
-    # Cargador principal: Excel de Seguimiento Agroindustrial
-    with st.expander("📊 Cargar Seguimiento Mensual", expanded=True):
+    # ==========================================================================
+    # SINCRONIZACIÓN AUTOMÁTICA CON GOOGLE DRIVE
+    # ==========================================================================
+    
+    with st.expander("☁️ Sincronizar desde Google Drive", expanded=True):
+        # Importar módulo de sincronización
+        try:
+            from scripts.sync_google_drive import check_google_drive_config, sync_from_google_drive
+            SYNC_AVAILABLE = True
+        except ImportError:
+            SYNC_AVAILABLE = False
+        
+        if not SYNC_AVAILABLE:
+            st.warning("⚠️ Módulo de sincronización no disponible")
+        else:
+            # Verificar configuración
+            config = check_google_drive_config()
+            
+            if not config['available']:
+                st.error("❌ Dependencias no instaladas")
+                st.code("pip install google-api-python-client google-auth", language="bash")
+            elif not config['ready']:
+                st.warning("⚠️ Configuración incompleta")
+                if not config['file_id_set']:
+                    st.caption("• GOOGLE_DRIVE_FILE_ID no configurado")
+                if not config['credentials_available']:
+                    st.caption("• Credenciales de servicio no encontradas")
+                st.caption("Configura las variables en .env")
+            else:
+                st.success("✅ Google Drive configurado")
+                
+                # Mostrar última sincronización
+                if 'last_sync' in st.session_state:
+                    st.caption(f"Última sync: {st.session_state.last_sync}")
+                
+                # Botón de sincronización manual
+                if st.button("🔄 Sincronizar ahora", type="primary", use_container_width=True):
+                    with st.spinner("📥 Descargando desde Google Drive..."):
+                        result = sync_from_google_drive()
+                        
+                        if result['success']:
+                            st.session_state.last_sync = result['timestamp']
+                            st.success(f"✅ {result['records_upstream']} registros actualizados")
+                            st.cache_data.clear()
+                            st.rerun()
+                        else:
+                            st.error(result['message'])
+    
+    # Cargador manual: Excel de Seguimiento Agroindustrial
+    with st.expander("📊 Cargar Seguimiento Mensual", expanded=False):
         st.caption("Sube el archivo Excel de Seguimiento Agroindustria")
         
         uploaded_seguimiento = st.file_uploader(
@@ -459,6 +1210,18 @@ with st.sidebar:
     
     st.divider()
     
+    # ==========================================================================
+    # PANEL DE CHAT IA
+    # ==========================================================================
+    
+    # Inicializar sesión de chat
+    initialize_chat_session()
+    
+    # Renderizar panel de chat
+    render_chat_panel()
+    
+    st.divider()
+    
     # Footer del sidebar
     st.markdown("""
     <div style="text-align: center; color: #999; font-size: 0.75rem; padding: 1rem 0;">
@@ -511,8 +1274,69 @@ todas_alertas = alertas_upstream + alertas_downstream
 # 4.7 - ÁREA PRINCIPAL: ROUTING DE VISTAS
 # =============================================================================
 
-# Header principal
-st.title("🌴 Oleoflores BI Dashboard")
+# Header principal con video animado del logo
+st.markdown('<div id="main-content"></div>', unsafe_allow_html=True)
+
+# Video banner animado del logo
+import base64
+import os
+
+video_path = "assets/logo_animado.mp4"
+if os.path.exists(video_path):
+    # Leer el video y convertirlo a base64 para embed
+    with open(video_path, "rb") as video_file:
+        video_bytes = video_file.read()
+        video_base64 = base64.b64encode(video_bytes).decode()
+    
+    # Mostrar video pequeño como logo en la esquina + título
+    st.markdown(f"""
+    <div style="
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    ">
+        <div style="
+            width: 240px;
+            height: 130px;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            flex-shrink: 0;
+        ">
+            <video 
+                autoplay 
+                loop 
+                muted 
+                playsinline
+                style="
+                    width: 100%;
+                    height: 130%;
+                    object-fit: cover;
+                    object-position: center center;
+                    margin-top: -15%;
+                "
+            >
+                <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
+            </video>
+        </div>
+        <div>
+            <h1 style="
+                margin: 0;
+                font-size: 2.5rem;
+                font-weight: 800;
+                background: linear-gradient(135deg, #00d68f 0%, #39d353 25%, #0bc5ea 50%, #58a6ff 75%, #ffaa00 100%);
+                background-size: 300% auto;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            ">🌴 Oleoflores BI Dashboard</h1>
+            <p style="margin: 0.25rem 0 0 0; color: #8b949e; font-size: 0.95rem;">Business Intelligence | Farm-to-Fork</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.title("🌴 Oleoflores BI Dashboard")
 
 # Mostrar errores de carga si existen
 if error_upstream:
@@ -683,7 +1507,12 @@ elif vista_seleccionada == "🌾 Upstream":
         }).reset_index()
         
         with col1:
-            st.subheader("📦 RFF Procesada")
+            # Header con selector para IA
+            hdr_col1, hdr_col2 = st.columns([0.9, 0.1])
+            with hdr_col1:
+                st.subheader("📦 RFF Procesada")
+            with hdr_col2:
+                rff_selected = st.checkbox("📌", key="sel_rff", help="Seleccionar para análisis IA")
             # Crear tabla RFF con semáforos
             df_rff = df_zona[['zona', 'rff_presupuesto', 'rff_real']].copy()
             df_rff.columns = ['Planta', 'ME', 'Real']
@@ -708,9 +1537,18 @@ elif vista_seleccionada == "🌾 Upstream":
             df_rff_display['Dif'] = df_rff_display['Dif'].apply(lambda x: f"{x:+,.0f}")
             
             st.dataframe(df_rff_display, use_container_width=True, hide_index=True)
+            
+            # Agregar al contexto si está seleccionado
+            if rff_selected:
+                add_data_to_context("tabla_rff", df_rff_display, "Tabla RFF Procesada por Planta")
         
         with col2:
-            st.subheader("🛢️ CPO")
+            # Header con selector para IA
+            hdr_col1, hdr_col2 = st.columns([0.9, 0.1])
+            with hdr_col1:
+                st.subheader("🛢️ CPO")
+            with hdr_col2:
+                cpo_selected = st.checkbox("📌", key="sel_cpo", help="Seleccionar para análisis IA")
             # Crear tabla CPO con semáforos
             df_cpo = df_zona[['zona', 'cpo_presupuesto', 'cpo_real']].copy()
             df_cpo.columns = ['Planta', 'CPO ME', 'CPO Real']
@@ -735,9 +1573,18 @@ elif vista_seleccionada == "🌾 Upstream":
             df_cpo_display['Dif TM'] = df_cpo_display['Dif TM'].apply(lambda x: f"{x:+,.0f}")
             
             st.dataframe(df_cpo_display, use_container_width=True, hide_index=True)
+            
+            # Agregar al contexto si está seleccionado
+            if cpo_selected:
+                add_data_to_context("tabla_cpo", df_cpo_display, "Tabla CPO por Planta")
         
         with col3:
-            st.subheader("🎯 TAE%")
+            # Header con selector para IA
+            hdr_col1, hdr_col2 = st.columns([0.9, 0.1])
+            with hdr_col1:
+                st.subheader("🎯 TAE%")
+            with hdr_col2:
+                tea_selected = st.checkbox("📌", key="sel_tea", help="Seleccionar para análisis IA")
             # Calcular TEA correctamente: TEA = CPO Total / RFF Total × 100
             # NO usar promedio de TEA diarios
             
@@ -785,6 +1632,10 @@ elif vista_seleccionada == "🌾 Upstream":
             df_tea_display['TEA Real'] = df_tea_display['TEA Real'].apply(lambda x: f"{x:.1f}%")
             
             st.dataframe(df_tea_display, use_container_width=True, hide_index=True)
+            
+            # Agregar al contexto si está seleccionado
+            if tea_selected:
+                add_data_to_context("tabla_tea", df_tea_display, "Tabla TAE% (Tasa de Extracción) por Planta")
         
         st.divider()
         

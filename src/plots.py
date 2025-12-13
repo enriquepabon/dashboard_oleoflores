@@ -29,19 +29,49 @@ from .utils import (
 )
 
 # =============================================================================
-# CONFIGURACIÓN COMÚN DE GRÁFICOS
+# CONFIGURACIÓN COMÚN DE GRÁFICOS - DARK MODE PREMIUM
 # =============================================================================
 
 LAYOUT_DEFAULTS = {
-    "font": {"family": "Inter, sans-serif", "color": COLORS["texto_principal"]},
+    "font": {
+        "family": "Inter, -apple-system, BlinkMacSystemFont, sans-serif", 
+        "color": "#f0f6fc",
+        "size": 13
+    },
     "paper_bgcolor": "rgba(0,0,0,0)",
     "plot_bgcolor": "rgba(0,0,0,0)",
-    "margin": {"l": 40, "r": 40, "t": 60, "b": 40},
+    "margin": {"l": 60, "r": 60, "t": 80, "b": 60},
     "hoverlabel": {
-        "bgcolor": "white",
-        "font_size": 12,
-        "font_family": "Inter, sans-serif"
-    }
+        "bgcolor": "rgba(13, 17, 23, 0.95)",
+        "font_size": 13,
+        "font_family": "Inter, sans-serif",
+        "font_color": "#f0f6fc",
+        "bordercolor": "#00d68f",
+        "namelength": -1
+    },
+    "xaxis": {
+        "gridcolor": "rgba(255, 255, 255, 0.08)",
+        "gridwidth": 1,
+        "linecolor": "rgba(0, 214, 143, 0.3)",
+        "linewidth": 2,
+        "tickfont": {"color": "#c9d1d9", "size": 11},
+        "title_font": {"color": "#f0f6fc", "size": 13, "family": "Inter, sans-serif"}
+    },
+    "yaxis": {
+        "gridcolor": "rgba(255, 255, 255, 0.08)",
+        "gridwidth": 1,
+        "linecolor": "rgba(0, 214, 143, 0.3)",
+        "linewidth": 2,
+        "tickfont": {"color": "#c9d1d9", "size": 11},
+        "title_font": {"color": "#f0f6fc", "size": 13, "family": "Inter, sans-serif"}
+    },
+    "legend": {
+        "font": {"color": "#c9d1d9", "size": 12},
+        "bgcolor": "rgba(22, 27, 34, 0.8)",
+        "bordercolor": "rgba(255, 255, 255, 0.1)",
+        "borderwidth": 1
+    },
+    "colorway": ["#00d68f", "#ffaa00", "#58a6ff", "#f0883e", "#a371f7", "#39d353", "#f778ba", "#8b949e"]
 }
 
 

@@ -13,41 +13,66 @@ Este módulo contiene:
 # =============================================================================
 
 COLORS = {
-    # Colores principales
-    "verde_oleo": "#2E7D32",      # Verde corporativo (positivo, éxito)
-    "dorado": "#F9A825",          # Dorado/Amarillo (neutro, aceite)
-    "rojo_alerta": "#C62828",     # Rojo (negativo, alerta)
+    # =========================================================================
+    # DARK MODE PREMIUM - Paleta Corporativa Sofisticada con Alto Contraste
+    # =========================================================================
     
-    # Colores de fondo y texto
-    "fondo": "#f9f9f9",           # Fondo principal (gris muy claro)
-    "fondo_tarjeta": "#ffffff",   # Fondo de tarjetas (blanco)
-    "texto_principal": "#333333", # Texto principal (gris oscuro)
-    "texto_secundario": "#666666",# Texto secundario
+    # Fondos - Gradiente oscuro premium CON MEJOR CONTRASTE
+    "fondo": "#0d1117",                    # Fondo principal (más equilibrado)
+    "fondo_secundario": "#161b22",         # Cards y secciones
+    "fondo_terciario": "#21262d",          # Nivel adicional de profundidad
+    "fondo_tarjeta": "#1c2128",            # Fondo de tarjetas
+    "fondo_glass": "rgba(255,255,255,0.08)", # Glassmorphism más visible
+    "fondo_hover": "rgba(255,255,255,0.12)", # Hover states más notorios
     
-    # Colores para gráficas
-    "azul_info": "#1565C0",       # Azul informativo
-    "naranja": "#EF6C00",         # Naranja para destacar
-    "gris_claro": "#E0E0E0",      # Gris para fondos de gauge
+    # Colores principales corporativos - VIBRANTES
+    "verde_oleo": "#00d68f",               # Verde vibrante (éxito)
+    "verde_oscuro": "#00b377",             # Verde para gradientes
+    "verde_glow": "rgba(0, 214, 143, 0.4)", # Verde para efectos glow
+    "dorado": "#ffaa00",                   # Dorado brillante (neutro)
+    "dorado_claro": "#ffc233",             # Dorado para hover
+    "rojo_alerta": "#ff6b6b",              # Rojo suave (alerta)
+    
+    # Texto - ALTO CONTRASTE WCAG AAA
+    "texto_principal": "#f0f6fc",          # Texto blanco suave (mejor legibilidad)
+    "texto_secundario": "#c9d1d9",         # Gris azulado claro mejorado
+    "texto_muted": "#8b949e",              # Texto deshabilitado
+    
+    # Acentos adicionales - VIBRANTES
+    "azul_info": "#58a6ff",                # Azul más vibrante
+    "naranja": "#f0883e",                  # Naranja cálido mejorado
+    "cyan": "#39d353",                     # Cyan/verde para destacar
+    "purple": "#a371f7",                   # Púrpura más vibrante
+    "rosa": "#f778ba",                     # Rosa vibrante
+    
+    # UI Elements - GLASSMORPHISM
+    "gris_claro": "#30363d",               # Bordes y separadores
+    "borde": "rgba(255,255,255,0.15)",     # Bordes sutiles más visibles
+    "borde_activo": "rgba(0,214,143,0.6)", # Borde con glow verde
+    "glass_border": "rgba(255,255,255,0.18)", # Bordes glass
+    "glass_shadow": "rgba(0,0,0,0.4)",     # Sombras para glass
 }
 
-# Paleta para gráficos de barras y líneas
+# Paleta para gráficos de barras y líneas - Colores vibrantes
 CHART_COLORS = [
-    "#2E7D32",  # Verde Oleo
-    "#F9A825",  # Dorado
-    "#1565C0",  # Azul
-    "#EF6C00",  # Naranja
-    "#7B1FA2",  # Púrpura
-    "#00838F",  # Cyan oscuro
+    "#00d68f",  # Verde vibrante
+    "#ffaa00",  # Dorado
+    "#4299e1",  # Azul
+    "#ed8936",  # Naranja
+    "#9f7aea",  # Púrpura
+    "#0bc5ea",  # Cyan
+    "#f687b3",  # Rosa
+    "#68d391",  # Verde claro
 ]
 
 # Colores para el diagrama Sankey
 SANKEY_COLORS = {
-    "cpo_entrada": "#F9A825",     # Entrada CPO (dorado)
-    "refineria": "#2E7D32",       # Refinería (verde)
-    "oleina": "#1565C0",          # Oleína (azul)
-    "rbd": "#00838F",             # RBD (cyan)
-    "margarinas": "#7B1FA2",      # Margarinas (púrpura)
-    "mermas": "#C62828",          # Mermas (rojo)
+    "cpo_entrada": "#ffaa00",     # Entrada CPO (dorado)
+    "refineria": "#00d68f",       # Refinería (verde)
+    "oleina": "#4299e1",          # Oleína (azul)
+    "rbd": "#0bc5ea",             # RBD (cyan)
+    "margarinas": "#9f7aea",      # Margarinas (púrpura)
+    "mermas": "#ff6b6b",          # Mermas (rojo)
 }
 
 # =============================================================================

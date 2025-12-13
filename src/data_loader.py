@@ -375,7 +375,7 @@ def load_downstream_data(
         return None, f"Columnas faltantes en archivo Downstream: {', '.join(missing)}"
     
     # 3. Limpiar valores numéricos
-    numeric_cols = [col for col in df.columns if col not in ['fecha', 'refineria']]
+    numeric_cols = [col for col in df.columns if col not in ['fecha', 'producto', 'tipo']]
     df = clean_numeric_values(df, numeric_cols)
     
     # 4. Normalizar fechas
@@ -384,8 +384,8 @@ def load_downstream_data(
     # 5. Calcular variaciones
     df = calculate_variations(df)
     
-    # Ordenar por fecha y refinería
-    df = df.sort_values(['fecha', 'refineria']).reset_index(drop=True)
+    # Ordenar por fecha y producto
+    df = df.sort_values(['fecha', 'producto']).reset_index(drop=True)
     
     return df, None
 

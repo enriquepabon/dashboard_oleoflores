@@ -1,0 +1,60 @@
+# ===========================================
+# Git Ignore - Dashboard Oleoflores
+# ===========================================
+
+# ============ SEGURIDAD ============
+# Variables de entorno con API keys
+.env
+.env.local
+.env.*.local
+
+# Credenciales de Google
+credentials/
+service_account*.json
+
+# ============ PYTHON ============
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# ============ IDE ============
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# ============ OS ============
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ============ OTROS ============
+# Logs
+*.log
+
+# Test artifacts
+Test/
