@@ -2144,6 +2144,17 @@ elif vista_seleccionada == "🥜 Balance Almendra":
             archivos_cargados = sum([1 for f in [file_czz, file_ag, file_mlb, file_sinu] if f is not None])
             st.info(f"📁 {archivos_cargados}/4 archivos cargados")
             
+            # Campo de contexto del usuario
+            st.markdown("---")
+            st.markdown("**📝 Contexto adicional (opcional)**")
+            contexto_usuario = st.text_area(
+                "Agrega información adicional para el análisis IA",
+                placeholder="Ej: Hubo un paro programado en MLB, se esperan bajos volúmenes...",
+                key="contexto_usuario_balance",
+                height=100,
+                label_visibility="collapsed"
+            )
+            
             # Botón de procesamiento
             if archivos_cargados > 0:
                 if st.button("🤖 Procesar con IA", type="primary", use_container_width=True, disabled=not api_key):
@@ -2197,11 +2208,12 @@ elif vista_seleccionada == "🥜 Balance Almendra":
                         df_balance = save_daily_balance(resultados)
                         if df_balance is not None:
                             st.session_state['balance_results'] = resultados
+                            st.session_state['balance_contexto_usuario'] = contexto_usuario
                             st.success(f"💾 Datos guardados: {len(df_balance)} registros")
                             
-                            # Generar análisis
+                            # Generar análisis (incluyendo contexto del usuario)
                             with st.spinner("🤖 Generando análisis IA..."):
-                                analisis = generate_balance_analysis(resultados)
+                                analisis = generate_balance_analysis(resultados, contexto_usuario)
                                 st.session_state['balance_analysis'] = analisis
                             
                             st.rerun()
@@ -2227,51 +2239,82 @@ elif vista_seleccionada == "🥜 Balance Almendra":
                 col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
-                    nuez_total = df_balance['nuez_inventario_kg'].sum()
+                    nuez_total = df_balance['nuez_inventario_final_kg'].sum() if 'nuez_inventario_final_kg' in df_balance.columns else 0
                     st.metric("🌰 Inventario Nuez", f"{nuez_total/1000:,.1f} Ton")
                 
                 with col2:
-                    almendra_total = df_balance['almendra_inventario_silos_kg'].sum()
-                    st.metric("🥜 Almendra en Silos", f"{almendra_total/1000:,.1f} Ton")
+                    almendra_total = df_balance['almendra_inventario_final_kg'].sum() if 'almendra_inventario_final_kg' in df_balance.columns else 0
+                    st.metric("🥜 Almendra Final", f"{almendra_total/1000:,.1f} Ton")
                 
                 with col3:
-                    almendra_emp = df_balance['almendra_inventario_empacada_kg'].sum()
+                    almendra_emp = df_balance['almendra_inventario_empacada_kg'].sum() if 'almendra_inventario_empacada_kg' in df_balance.columns else 0
                     st.metric("📦 Almendra Empacada", f"{almendra_emp/1000:,.1f} Ton")
                 
                 with col4:
-                    ckpo_total = df_balance['ckpo_inventario_kg'].sum()
-                    st.metric("🛢️ CKPO Inventario", f"{ckpo_total/1000:,.1f} Ton")
+                    ckpo_total = df_balance['ckpo_inventario_final_kg'].sum() if 'ckpo_inventario_final_kg' in df_balance.columns else 0
+                    st.metric("🛢️ CKPO Final", f"{ckpo_total/1000:,.1f} Ton")
                 
                 st.divider()
                 
+                # Función auxiliar para obtener columna segura
+                def safe_cols(df, cols):
+                    return [c for c in cols if c in df.columns]
+                
                 # Tablas de detalle
+                st.markdown("#### 🌰 Balance de Nuez por Planta")
+                nuez_cols = safe_cols(df_balance, ['planta', 'nuez_inventario_inicial_kg', 'nuez_entrada_kg', 'nuez_produccion_kg', 'nuez_consumo_kg', 'nuez_inventario_final_kg'])
+                if len(nuez_cols) > 1:
+                    df_nuez = df_balance[nuez_cols].copy()
+                    df_nuez.columns = ['Planta'] + ['Inv. Inicial', 'Entrada', 'Producción', 'Consumo', 'Inv. Final'][:len(nuez_cols)-1]
+                    st.dataframe(df_nuez, use_container_width=True, hide_index=True)
+                
                 col_izq, col_der = st.columns(2)
                 
                 with col_izq:
-                    st.markdown("#### 🌰 Procesamiento de Nuez")
-                    df_nuez = df_balance[['planta', 'nuez_entrada_kg', 'nuez_consumo_kg', 'nuez_inventario_kg']].copy()
-                    df_nuez.columns = ['Planta', 'Entrada (kg)', 'Consumo (kg)', 'Inventario (kg)']
-                    st.dataframe(df_nuez, use_container_width=True, hide_index=True)
-                    
-                    st.markdown("#### 🥜 Procesamiento de Almendra")
-                    df_almendra = df_balance[['planta', 'almendra_produccion_kg', 'almendra_traslado_expeller_kg', 'almendra_inventario_silos_kg']].copy()
-                    df_almendra.columns = ['Planta', 'Producción (kg)', 'Traslado Exp. (kg)', 'Inv. Silos (kg)']
-                    st.dataframe(df_almendra, use_container_width=True, hide_index=True)
+                    st.markdown("#### 🥜 Balance de Almendra")
+                    alm_cols = safe_cols(df_balance, ['planta', 'almendra_inventario_inicial_kg', 'almendra_produccion_kg', 'almendra_compra_kg', 'almendra_traslado_expeller_kg', 'almendra_inventario_final_kg'])
+                    if len(alm_cols) > 1:
+                        df_almendra = df_balance[alm_cols].copy()
+                        col_names = ['Planta']
+                        mapping = {'almendra_inventario_inicial_kg': 'Inv. Inicial', 'almendra_produccion_kg': 'Producción', 
+                                   'almendra_compra_kg': 'Compra', 'almendra_traslado_expeller_kg': 'Traslado Exp.', 
+                                   'almendra_inventario_final_kg': 'Inv. Final'}
+                        col_names += [mapping.get(c, c) for c in alm_cols[1:]]
+                        df_almendra.columns = col_names
+                        st.dataframe(df_almendra, use_container_width=True, hide_index=True)
                 
                 with col_der:
-                    st.markdown("#### 🛢️ CKPO (Expellers)")
-                    df_ckpo = df_balance[['planta', 'ckpo_produccion_kg', 'ckpo_despacho_kg', 'ckpo_inventario_kg']].copy()
-                    df_ckpo.columns = ['Planta', 'Producción (kg)', 'Despacho (kg)', 'Inventario (kg)']
-                    st.dataframe(df_ckpo, use_container_width=True, hide_index=True)
-                    
-                    st.markdown("#### 🍞 Torta de Palmiste")
-                    df_torta = df_balance[['planta', 'torta_produccion_kg', 'torta_despacho_kg', 'torta_inventario_kg']].copy()
-                    df_torta.columns = ['Planta', 'Producción (kg)', 'Despacho (kg)', 'Inventario (kg)']
+                    st.markdown("#### 🛢️ Balance CKPO (Expellers)")
+                    ckpo_cols = safe_cols(df_balance, ['planta', 'ckpo_inventario_inicial_kg', 'ckpo_produccion_kg', 'ckpo_despacho_kg', 'ckpo_traslado_refineria_kg', 'ckpo_inventario_final_kg'])
+                    if len(ckpo_cols) > 1:
+                        df_ckpo = df_balance[ckpo_cols].copy()
+                        col_names = ['Planta']
+                        mapping = {'ckpo_inventario_inicial_kg': 'Inv. Inicial', 'ckpo_produccion_kg': 'Producción',
+                                   'ckpo_despacho_kg': 'Despacho', 'ckpo_traslado_refineria_kg': 'Traslado Ref.',
+                                   'ckpo_inventario_final_kg': 'Inv. Final'}
+                        col_names += [mapping.get(c, c) for c in ckpo_cols[1:]]
+                        df_ckpo.columns = col_names
+                        st.dataframe(df_ckpo, use_container_width=True, hide_index=True)
+                
+                # Torta
+                st.markdown("#### 🍞 Balance Torta de Palmiste")
+                torta_cols = safe_cols(df_balance, ['planta', 'torta_inventario_inicial_kg', 'torta_produccion_kg', 'torta_despacho_kg', 'torta_inventario_final_kg'])
+                if len(torta_cols) > 1:
+                    df_torta = df_balance[torta_cols].copy()
+                    col_names = ['Planta']
+                    mapping = {'torta_inventario_inicial_kg': 'Inv. Inicial', 'torta_produccion_kg': 'Producción',
+                               'torta_despacho_kg': 'Despacho', 'torta_inventario_final_kg': 'Inv. Final'}
+                    col_names += [mapping.get(c, c) for c in torta_cols[1:]]
+                    df_torta.columns = col_names
                     st.dataframe(df_torta, use_container_width=True, hide_index=True)
                 
                 # Análisis IA
                 st.divider()
                 st.markdown("#### 🤖 Análisis IA")
+                
+                # Mostrar contexto del usuario si existe
+                if 'balance_contexto_usuario' in st.session_state and st.session_state['balance_contexto_usuario']:
+                    st.info(f"📝 **Contexto del usuario:** {st.session_state['balance_contexto_usuario']}")
                 
                 if 'balance_analysis' in st.session_state:
                     st.markdown(st.session_state['balance_analysis'])
@@ -2279,7 +2322,8 @@ elif vista_seleccionada == "🥜 Balance Almendra":
                     # Intentar generar análisis desde datos guardados
                     if 'balance_results' in st.session_state:
                         with st.spinner("Generando análisis..."):
-                            analisis = generate_balance_analysis(st.session_state['balance_results'])
+                            contexto = st.session_state.get('balance_contexto_usuario', '')
+                            analisis = generate_balance_analysis(st.session_state['balance_results'], contexto)
                             st.markdown(analisis)
                     else:
                         st.info("El análisis se generará cuando proceses nuevos reportes.")
@@ -2320,27 +2364,32 @@ elif vista_seleccionada == "🥜 Balance Almendra":
                     # Gráfico de tendencia
                     st.markdown("#### 📊 Tendencia de Inventarios")
                     
-                    df_trend = df_historico.groupby('fecha').agg({
-                        'nuez_inventario_kg': 'sum',
-                        'almendra_inventario_silos_kg': 'sum',
-                        'ckpo_inventario_kg': 'sum'
-                    }).reset_index()
+                    # Usar columnas existentes para el gráfico
+                    trend_cols = []
+                    for col in ['nuez_inventario_final_kg', 'almendra_inventario_final_kg', 'ckpo_inventario_final_kg']:
+                        if col in df_historico.columns:
+                            trend_cols.append(col)
                     
-                    import plotly.express as px
-                    
-                    fig = px.line(
-                        df_trend, 
-                        x='fecha', 
-                        y=['nuez_inventario_kg', 'almendra_inventario_silos_kg', 'ckpo_inventario_kg'],
-                        labels={'value': 'Kilogramos', 'fecha': 'Fecha', 'variable': 'Producto'},
-                        title='Evolución de Inventarios'
-                    )
-                    fig.update_layout(
-                        template='plotly_dark',
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)'
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                    if trend_cols:
+                        df_trend = df_historico.groupby('fecha')[trend_cols].sum().reset_index()
+                        
+                        import plotly.express as px
+                        
+                        fig = px.line(
+                            df_trend, 
+                            x='fecha', 
+                            y=trend_cols,
+                            labels={'value': 'Kilogramos', 'fecha': 'Fecha', 'variable': 'Producto'},
+                            title='Evolución de Inventarios Finales'
+                        )
+                        fig.update_layout(
+                            template='plotly_dark',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)'
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info("📊 No hay columnas de inventario para graficar.")
                 else:
                     st.info("📭 No hay datos históricos disponibles.")
             else:

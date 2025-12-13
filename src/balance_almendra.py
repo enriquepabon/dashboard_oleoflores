@@ -71,6 +71,7 @@ IMPORTANTE:
 - Si un valor no está presente, usa null
 - Los valores están en kilogramos (Kg) a menos que se indique Ton
 - Convierte toneladas a kilogramos multiplicando por 1000
+- "Saldo anterior" = inventario inicial, "Existencia" o "Saldo final" = inventario final
 
 Responde ÚNICAMENTE con el JSON, sin texto adicional ni markdown:
 
@@ -78,27 +79,34 @@ Responde ÚNICAMENTE con el JSON, sin texto adicional ni markdown:
   "fecha": "YYYY-MM-DD",
   "planta": "nombre de la planta (CZZ, A&G, MLB, SINU)",
   "nuez": {
+    "inventario_inicial_kg": null,
     "entrada_kg": null,
+    "produccion_kg": null,
     "consumo_kg": null,
-    "inventario_kg": null,
-    "produccion_kg": null
+    "inventario_final_kg": null
   },
   "almendra": {
+    "inventario_inicial_kg": null,
     "produccion_kg": null,
+    "compra_kg": null,
+    "traslado_expeller_kg": null,
     "despacho_kg": null,
     "inventario_silos_kg": null,
     "inventario_empacada_kg": null,
-    "traslado_expeller_kg": null
+    "inventario_final_kg": null
   },
   "ckpo": {
+    "inventario_inicial_kg": null,
     "produccion_kg": null,
     "despacho_kg": null,
-    "inventario_kg": null
+    "traslado_refineria_kg": null,
+    "inventario_final_kg": null
   },
   "torta": {
+    "inventario_inicial_kg": null,
     "produccion_kg": null,
     "despacho_kg": null,
-    "inventario_kg": null
+    "inventario_final_kg": null
   },
   "metricas": {
     "tea_palmiste_pct": null,
@@ -297,24 +305,31 @@ def flatten_report_data(data: Dict[str, Any]) -> Dict[str, Any]:
         'fecha': data.get('fecha'),
         'planta': data.get('planta'),
         # Nuez
+        'nuez_inventario_inicial_kg': data.get('nuez', {}).get('inventario_inicial_kg'),
         'nuez_entrada_kg': data.get('nuez', {}).get('entrada_kg'),
-        'nuez_consumo_kg': data.get('nuez', {}).get('consumo_kg'),
-        'nuez_inventario_kg': data.get('nuez', {}).get('inventario_kg'),
         'nuez_produccion_kg': data.get('nuez', {}).get('produccion_kg'),
+        'nuez_consumo_kg': data.get('nuez', {}).get('consumo_kg'),
+        'nuez_inventario_final_kg': data.get('nuez', {}).get('inventario_final_kg'),
         # Almendra
+        'almendra_inventario_inicial_kg': data.get('almendra', {}).get('inventario_inicial_kg'),
         'almendra_produccion_kg': data.get('almendra', {}).get('produccion_kg'),
+        'almendra_compra_kg': data.get('almendra', {}).get('compra_kg'),
+        'almendra_traslado_expeller_kg': data.get('almendra', {}).get('traslado_expeller_kg'),
         'almendra_despacho_kg': data.get('almendra', {}).get('despacho_kg'),
         'almendra_inventario_silos_kg': data.get('almendra', {}).get('inventario_silos_kg'),
         'almendra_inventario_empacada_kg': data.get('almendra', {}).get('inventario_empacada_kg'),
-        'almendra_traslado_expeller_kg': data.get('almendra', {}).get('traslado_expeller_kg'),
+        'almendra_inventario_final_kg': data.get('almendra', {}).get('inventario_final_kg'),
         # CKPO
+        'ckpo_inventario_inicial_kg': data.get('ckpo', {}).get('inventario_inicial_kg'),
         'ckpo_produccion_kg': data.get('ckpo', {}).get('produccion_kg'),
         'ckpo_despacho_kg': data.get('ckpo', {}).get('despacho_kg'),
-        'ckpo_inventario_kg': data.get('ckpo', {}).get('inventario_kg'),
+        'ckpo_traslado_refineria_kg': data.get('ckpo', {}).get('traslado_refineria_kg'),
+        'ckpo_inventario_final_kg': data.get('ckpo', {}).get('inventario_final_kg'),
         # Torta
+        'torta_inventario_inicial_kg': data.get('torta', {}).get('inventario_inicial_kg'),
         'torta_produccion_kg': data.get('torta', {}).get('produccion_kg'),
         'torta_despacho_kg': data.get('torta', {}).get('despacho_kg'),
-        'torta_inventario_kg': data.get('torta', {}).get('inventario_kg'),
+        'torta_inventario_final_kg': data.get('torta', {}).get('inventario_final_kg'),
         # Métricas
         'tea_palmiste_pct': data.get('metricas', {}).get('tea_palmiste_pct'),
         'recuperacion_almendra_pct': data.get('metricas', {}).get('recuperacion_almendra_pct'),
@@ -406,12 +421,13 @@ def get_daily_balance(fecha: Optional[str] = None, output_path: str = 'data/bala
 # ANÁLISIS CON IA
 # ============================================================================
 
-def generate_balance_analysis(reports_data: List[Dict[str, Any]]) -> str:
+def generate_balance_analysis(reports_data: List[Dict[str, Any]], contexto_usuario: str = "") -> str:
     """
     Genera un análisis del balance de almendra usando IA (OpenAI).
     
     Args:
         reports_data: Lista de datos de reportes procesados
+        contexto_usuario: Contexto adicional proporcionado por el usuario
     
     Returns:
         str: Análisis en texto
@@ -429,11 +445,34 @@ def generate_balance_analysis(reports_data: List[Dict[str, Any]]) -> str:
         if 'error' not in data:
             resumen += f"Planta: {data.get('planta', 'N/A')}\n"
             resumen += f"Fecha: {data.get('fecha', 'N/A')}\n"
+            
+            # Incluir datos de inventarios
+            if data.get('nuez'):
+                nuez = data['nuez']
+                resumen += f"  Nuez - Inicial: {nuez.get('inventario_inicial_kg')}, Final: {nuez.get('inventario_final_kg')}, Consumo: {nuez.get('consumo_kg')}\n"
+            if data.get('almendra'):
+                alm = data['almendra']
+                resumen += f"  Almendra - Inicial: {alm.get('inventario_inicial_kg')}, Final: {alm.get('inventario_final_kg')}, Producción: {alm.get('produccion_kg')}\n"
+            if data.get('ckpo'):
+                ckpo = data['ckpo']
+                resumen += f"  CKPO - Inicial: {ckpo.get('inventario_inicial_kg')}, Final: {ckpo.get('inventario_final_kg')}, Producción: {ckpo.get('produccion_kg')}\n"
+            
             if data.get('comentarios_operativos'):
-                resumen += f"Comentarios: {data['comentarios_operativos']}\n"
+                resumen += f"  Comentarios: {data['comentarios_operativos']}\n"
             if data.get('problemas_detectados'):
-                resumen += f"Problemas: {', '.join(data['problemas_detectados'])}\n"
+                resumen += f"  Problemas: {', '.join(data['problemas_detectados'])}\n"
             resumen += "\n"
+    
+    # Agregar contexto del usuario si existe
+    contexto_adicional = ""
+    if contexto_usuario and contexto_usuario.strip():
+        contexto_adicional = f"""
+        
+CONTEXTO ADICIONAL DEL USUARIO:
+{contexto_usuario}
+
+Incluye este contexto en tu análisis.
+"""
     
     # Prompt de análisis
     analysis_prompt = f"""
@@ -442,11 +481,12 @@ def generate_balance_analysis(reports_data: List[Dict[str, Any]]) -> str:
     Analiza los siguientes datos del balance diario de almendra y genera un reporte ejecutivo:
     
     {resumen}
+    {contexto_adicional}
     
     Tu análisis debe incluir:
     1. **Resumen General**: Estado general del procesamiento de almendra
     2. **Alertas**: Problemas operativos o mecánicos detectados
-    3. **Inventarios**: Estado de los inventarios de nuez y almendra
+    3. **Inventarios**: Estado de los inventarios de nuez, almendra y CKPO (inicial vs final)
     4. **Eficiencia**: Comentarios sobre la eficiencia del proceso
     5. **Recomendaciones**: Sugerencias para mejorar operaciones
     
@@ -460,8 +500,9 @@ def generate_balance_analysis(reports_data: List[Dict[str, Any]]) -> str:
             messages=[
                 {"role": "user", "content": analysis_prompt}
             ],
-            max_tokens=1000
+            max_tokens=1500
         )
         return response.choices[0].message.content
     except Exception as e:
         return f"❌ Error generando análisis: {str(e)}"
+
