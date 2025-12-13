@@ -807,7 +807,7 @@ st.markdown("""
 
 with st.sidebar:
     # Logo icono (ancho completo del sidebar)
-    st.image("assets/Iconopalma.png", use_container_width=True)
+    st.image("assets/iconopalma.png", use_container_width=True)
     st.markdown("""
     <div style="text-align: center; padding: 0.5rem 0;">
         <h1 class="sidebar-title">Oleoflores</h1>
