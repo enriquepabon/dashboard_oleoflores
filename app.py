@@ -806,9 +806,12 @@ st.markdown("""
 # =============================================================================
 
 with st.sidebar:
+    # Logo icono
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("assets/Iconopalma.png", width=80)
     st.markdown("""
-    <div style="text-align: center; padding: 1rem 0;">
-        <span style="font-size: 3rem;">🌴</span>
+    <div style="text-align: center; padding: 0.5rem 0;">
         <h1 class="sidebar-title">Oleoflores</h1>
         <p class="sidebar-subtitle">Business Intelligence Dashboard</p>
     </div>
