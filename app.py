@@ -821,7 +821,10 @@ with st.sidebar:
     
     # Botón de cerrar sesión
     if st.button("🚪 Cerrar Sesión", use_container_width=True, type="secondary"):
-        st.logout()
+        if "authenticator" in st.session_state:
+            st.session_state["authenticator"].logout()
+        st.session_state['connected'] = False
+        st.rerun()
     
     st.divider()
 
