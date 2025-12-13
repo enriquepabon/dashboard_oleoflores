@@ -806,9 +806,10 @@ st.markdown("""
 # =============================================================================
 
 with st.sidebar:
+    # Banner/Logo
+    st.image("assets/banner.png", use_container_width=True)
     st.markdown("""
-    <div style="text-align: center; padding: 1rem 0;">
-        <span style="font-size: 3rem;">🌴</span>
+    <div style="text-align: center; padding: 0.5rem 0;">
         <h1 class="sidebar-title">Oleoflores</h1>
         <p class="sidebar-subtitle">Business Intelligence Dashboard</p>
     </div>
@@ -1290,12 +1291,6 @@ if filtros_activos:
     st.caption(f"Filtros activos: {' | '.join(filtros_activos)}")
 
 st.divider()
-
-# =============================================================================
-# BANNER PRINCIPAL
-# =============================================================================
-
-st.image("assets/banner.png", use_container_width=True)
 
 # =============================================================================
 # ROUTING: MOSTRAR VISTA SELECCIONADA
