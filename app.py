@@ -806,10 +806,9 @@ st.markdown("""
 # =============================================================================
 
 with st.sidebar:
-    # Banner/Logo
-    st.image("assets/banner.png", use_container_width=True)
     st.markdown("""
-    <div style="text-align: center; padding: 0.5rem 0;">
+    <div style="text-align: center; padding: 1rem 0;">
+        <span style="font-size: 3rem;">🌴</span>
         <h1 class="sidebar-title">Oleoflores</h1>
         <p class="sidebar-subtitle">Business Intelligence Dashboard</p>
     </div>
@@ -1199,8 +1198,11 @@ todas_alertas = alertas_upstream + alertas_downstream
 # 4.7 - ÁREA PRINCIPAL: ROUTING DE VISTAS
 # =============================================================================
 
-# Header principal con video animado del logo
+# Header principal con banner y video animado del logo
 st.markdown('<div id="main-content"></div>', unsafe_allow_html=True)
+
+# Banner de encabezado (ancho completo)
+st.image("assets/banner2.png", use_container_width=True)
 
 # Video banner animado del logo
 import base64
