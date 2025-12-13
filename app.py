@@ -833,9 +833,27 @@ st.markdown("""
     
     /* Mobile phones */
     @media (max-width: 768px) {
-        /* Hide sidebar by default on mobile - user can swipe */
+        /* Sidebar as overlay on mobile */
         [data-testid="stSidebar"] {
-            width: 280px !important;
+            position: fixed !important;
+            z-index: 999 !important;
+            height: 100vh !important;
+            width: 85vw !important;
+            max-width: 320px !important;
+            background: #0a0a0a !important;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.5) !important;
+        }
+        
+        /* When sidebar is collapsed, hide it off-screen */
+        [data-testid="stSidebar"][aria-expanded="false"] {
+            transform: translateX(-100%) !important;
+        }
+        
+        /* Main content takes full width when sidebar closed */
+        .main .block-container {
+            max-width: 100% !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
         }
         
         /* Reduce header sizes */
