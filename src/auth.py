@@ -338,7 +338,16 @@ def render_login_page():
             
             # Botón de login con Google
             if st.button("🚀 Iniciar sesión con Google", use_container_width=True, type="primary"):
-                st.login()
+                try:
+                    st.login()
+                except Exception as e:
+                    st.error(f"❌ Error de autenticación: {str(e)}")
+                    st.warning("""
+                    **Posibles causas:**
+                    - El `redirect_uri` no coincide con el configurado en Google Cloud
+                    - El `client_id` o `client_secret` son incorrectos
+                    - Falta `server_metadata_url` en los secrets
+                    """)
             
             st.markdown("""
             <p class="login-info">
