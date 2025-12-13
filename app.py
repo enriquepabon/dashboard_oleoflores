@@ -2293,9 +2293,16 @@ elif vista_seleccionada == "🥜 Balance Almendra":
             # Cargar todos los datos
             balance_path = "data/balance_almendra.csv"
             if os.path.exists(balance_path):
-                df_historico = pd.read_csv(balance_path)
+                try:
+                    df_historico = pd.read_csv(balance_path)
+                except Exception:
+                    df_historico = pd.DataFrame()
                 
-                if not df_historico.empty:
+                # Validar que hay datos y columna fecha
+                if not df_historico.empty and 'fecha' in df_historico.columns:
+                    df_historico = df_historico.dropna(subset=['fecha'])
+                    
+                if not df_historico.empty and 'fecha' in df_historico.columns:
                     # Selector de fecha
                     fechas_disponibles = sorted(df_historico['fecha'].unique(), reverse=True)
                     fecha_sel = st.selectbox(
