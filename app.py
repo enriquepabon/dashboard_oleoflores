@@ -2213,7 +2213,8 @@ elif vista_seleccionada == "🥜 Balance Almendra":
                             
                             # Generar análisis (incluyendo contexto del usuario)
                             with st.spinner("🤖 Generando análisis IA..."):
-                                analisis = generate_balance_analysis(resultados, contexto_usuario)
+                                ctx = st.session_state.get('balance_contexto_usuario', '') or ''
+                                analisis = generate_balance_analysis(resultados, ctx)
                                 st.session_state['balance_analysis'] = analisis
                             
                             st.rerun()
