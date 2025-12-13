@@ -18,6 +18,71 @@ from typing import Optional
 ALLOWED_DOMAIN = "oleoflores.com"
 
 # =============================================================================
+# FUNCIONES DE VERIFICACIÓN DE CONFIGURACIÓN
+# =============================================================================
+
+def is_auth_configured() -> bool:
+    """
+    Verifica si la autenticación OAuth está configurada en secrets.
+    
+    Returns:
+        bool: True si los secrets están configurados
+    """
+    try:
+        auth = st.secrets.get("auth", {})
+        required_keys = ["client_id", "client_secret", "redirect_uri", "cookie_secret"]
+        return all(auth.get(key) for key in required_keys)
+    except Exception:
+        return False
+
+
+def render_setup_pending():
+    """
+    Muestra mensaje cuando la autenticación aún no está configurada.
+    """
+    st.markdown("""
+    <style>
+        .setup-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+        }
+        .setup-card {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown("""
+        <div class="setup-container">
+            <div style="font-size: 4rem;">🔧</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('<div class="setup-card">', unsafe_allow_html=True)
+        st.markdown("### Configuración Pendiente")
+        st.markdown("La autenticación con Google OAuth aún no está configurada.")
+        st.markdown("")
+        st.info("""
+        **Para el administrador:**
+        1. Configura las credenciales OAuth en Google Cloud Console
+        2. Agrega los secrets en Streamlit Cloud > Settings > Secrets
+        3. Consulta `docs/SETUP_GOOGLE_AUTH.md` para instrucciones
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# =============================================================================
 # FUNCIONES DE AUTENTICACIÓN
 # =============================================================================
 
@@ -322,6 +387,11 @@ def handle_authentication() -> bool:
     Returns:
         bool: True si el usuario puede acceder, False si debe detenerse
     """
+    # Caso 0: Auth no configurada -> mostrar mensaje de setup
+    if not is_auth_configured():
+        render_setup_pending()
+        return False
+    
     auth_status = get_auth_status()
     
     # Caso 1: No está logueado -> mostrar login
