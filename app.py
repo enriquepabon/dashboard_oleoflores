@@ -1201,7 +1201,7 @@ todas_alertas = alertas_upstream + alertas_downstream
 
 # Header principal - Banner (ancho completo)
 st.markdown('<div id="main-content"></div>', unsafe_allow_html=True)
-st.image("assets/banner2.png", use_container_width=True)
+st.image("assets/banner3.png", use_container_width=True)
 
 # Mostrar errores de carga si existen
 if error_upstream:
