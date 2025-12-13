@@ -284,9 +284,89 @@ def extract_downstream_data(xlsx, date_columns_upstream):
     return records
 
 
+def merge_with_historical_data(df_new, csv_path, date_column='fecha'):
+    """
+    Combina datos nuevos con histórico existente.
+    
+    - Lee el CSV histórico si existe
+    - Determina el rango de fechas de los nuevos datos
+    - Elimina del histórico solo los registros que se solapan
+    - Agrega los nuevos datos
+    - Retorna el DataFrame combinado ordenado por fecha
+    
+    Args:
+        df_new: DataFrame con los datos nuevos
+        csv_path: Ruta al archivo CSV histórico
+        date_column: Nombre de la columna de fecha
+    
+    Returns:
+        DataFrame: Datos combinados (histórico + nuevos)
+    """
+    if df_new.empty:
+        return df_new
+    
+    # Convertir fechas a datetime para comparación
+    df_new[date_column] = pd.to_datetime(df_new[date_column])
+    
+    # Determinar rango de fechas de los datos nuevos
+    fecha_min = df_new[date_column].min()
+    fecha_max = df_new[date_column].max()
+    
+    # Determinar el mes/año de los datos nuevos (para logging)
+    mes_nuevo = fecha_min.strftime('%Y-%m')
+    
+    # Verificar si existe histórico
+    if os.path.exists(csv_path):
+        try:
+            df_historico = pd.read_csv(csv_path)
+            df_historico[date_column] = pd.to_datetime(df_historico[date_column])
+            
+            registros_antes = len(df_historico)
+            
+            # Filtrar: mantener solo registros FUERA del rango de fechas nuevas
+            df_historico_filtrado = df_historico[
+                (df_historico[date_column] < fecha_min) | 
+                (df_historico[date_column] > fecha_max)
+            ]
+            
+            registros_eliminados = registros_antes - len(df_historico_filtrado)
+            
+            if registros_eliminados > 0:
+                print(f"   📋 Histórico: {registros_antes} registros existentes")
+                print(f"   🔄 Actualizando {registros_eliminados} registros de {mes_nuevo}")
+            
+            # Combinar histórico + nuevos
+            df_combinado = pd.concat([df_historico_filtrado, df_new], ignore_index=True)
+            
+        except Exception as e:
+            print(f"   ⚠️ Error leyendo histórico ({e}), usando solo datos nuevos")
+            df_combinado = df_new
+    else:
+        print(f"   📋 Sin histórico previo, creando nuevo archivo")
+        df_combinado = df_new
+    
+    # Ordenar por fecha y zona/producto
+    sort_columns = [date_column]
+    if 'zona' in df_combinado.columns:
+        sort_columns.append('zona')
+    elif 'producto' in df_combinado.columns:
+        sort_columns.append('producto')
+    
+    df_combinado = df_combinado.sort_values(sort_columns).reset_index(drop=True)
+    
+    # Convertir fecha de vuelta a string para el CSV
+    df_combinado[date_column] = df_combinado[date_column].dt.strftime('%Y-%m-%d')
+    
+    return df_combinado
+
+
 def convert_excel_to_csv(excel_path, output_upstream=None, output_downstream=None):
     """
     Convierte el Excel de Seguimiento al formato del dashboard.
+    
+    HISTÓRICO ACUMULATIVO: Los datos se agregan al CSV existente en lugar de
+    reemplazarlo. Solo se actualizan los registros del mes que se está importando,
+    manteniendo los datos históricos con sus metas TEA originales.
     
     Args:
         excel_path: Ruta al archivo Excel
@@ -324,22 +404,30 @@ def convert_excel_to_csv(excel_path, output_upstream=None, output_downstream=Non
     downstream_records = extract_downstream_data(xlsx, date_columns)
     print(f"📊 Registros DOWNSTREAM extraídos: {len(downstream_records)}")
     
-    # Crear DataFrames
-    df_up = pd.DataFrame(upstream_records)
-    df_down = pd.DataFrame(downstream_records) if downstream_records else pd.DataFrame()
+    # Crear DataFrames con los datos nuevos
+    df_up_new = pd.DataFrame(upstream_records)
+    df_down_new = pd.DataFrame(downstream_records) if downstream_records else pd.DataFrame()
     
-    # Guardar archivos
+    # Definir rutas de salida
     if output_upstream is None:
         output_upstream = os.path.join(os.path.dirname(excel_path), 'upstream.csv')
     if output_downstream is None:
         output_downstream = os.path.join(os.path.dirname(excel_path), 'downstream.csv')
     
+    # Combinar con histórico (UPSTREAM)
+    print(f"\n📚 Procesando histórico UPSTREAM...")
+    df_up = merge_with_historical_data(df_up_new, output_upstream)
     df_up.to_csv(output_upstream, index=False)
-    print(f"💾 Guardado: {output_upstream}")
+    print(f"💾 Guardado: {output_upstream} ({len(df_up)} registros totales)")
     
-    if not df_down.empty:
+    # Combinar con histórico (DOWNSTREAM)
+    if not df_down_new.empty:
+        print(f"\n📚 Procesando histórico DOWNSTREAM...")
+        df_down = merge_with_historical_data(df_down_new, output_downstream)
         df_down.to_csv(output_downstream, index=False)
-        print(f"💾 Guardado: {output_downstream}")
+        print(f"💾 Guardado: {output_downstream} ({len(df_down)} registros totales)")
+    else:
+        df_down = df_down_new
     
     # Resumen por planta
     print("\n📈 RESUMEN POR PLANTA:")
