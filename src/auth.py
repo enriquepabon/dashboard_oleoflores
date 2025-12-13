@@ -29,16 +29,57 @@ def is_auth_configured() -> bool:
         bool: True si los secrets están configurados
     """
     try:
-        auth = st.secrets.get("auth", {})
+        # Check if auth section exists
+        if "auth" not in st.secrets:
+            return False
+        
+        auth = st.secrets["auth"]
         required_keys = ["client_id", "client_secret", "redirect_uri", "cookie_secret"]
-        return all(auth.get(key) for key in required_keys)
+        
+        # Check all required keys exist and have values
+        for key in required_keys:
+            if key not in auth or not auth[key]:
+                return False
+        
+        return True
     except Exception:
         return False
+
+
+def get_auth_config_status() -> dict:
+    """
+    Obtiene el estado detallado de la configuración de auth.
+    Útil para debugging.
+    """
+    status = {
+        "has_auth_section": False,
+        "missing_keys": [],
+        "configured": False
+    }
+    
+    try:
+        if "auth" not in st.secrets:
+            return status
+        
+        status["has_auth_section"] = True
+        auth = st.secrets["auth"]
+        
+        required_keys = ["client_id", "client_secret", "redirect_uri", "cookie_secret", "server_metadata_url"]
+        for key in required_keys:
+            if key not in auth or not auth[key]:
+                status["missing_keys"].append(key)
+        
+        status["configured"] = len(status["missing_keys"]) == 0
+        return status
+    except Exception as e:
+        status["error"] = str(e)
+        return status
 
 
 def render_setup_pending():
     """
     Muestra mensaje cuando la autenticación aún no está configurada.
+    Incluye diagnóstico detallado.
     """
     st.markdown("""
     <style>
@@ -47,7 +88,7 @@ def render_setup_pending():
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 80vh;
+            min-height: 60vh;
             text-align: center;
         }
         .setup-card {
@@ -55,7 +96,7 @@ def render_setup_pending():
             border: 1px solid rgba(251, 191, 36, 0.3);
             border-radius: 16px;
             padding: 2rem;
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
         }
     </style>
@@ -72,13 +113,28 @@ def render_setup_pending():
         
         st.markdown('<div class="setup-card">', unsafe_allow_html=True)
         st.markdown("### Configuración Pendiente")
-        st.markdown("La autenticación con Google OAuth aún no está configurada.")
-        st.markdown("")
+        st.markdown("La autenticación con Google OAuth aún no está configurada correctamente.")
+        
+        # Show diagnostic info
+        config_status = get_auth_config_status()
+        
+        if not config_status["has_auth_section"]:
+            st.error("❌ No se encontró la sección `[auth]` en secrets")
+        elif config_status["missing_keys"]:
+            st.warning(f"⚠️ Faltan estas claves: `{', '.join(config_status['missing_keys'])}`")
+        elif "error" in config_status:
+            st.error(f"❌ Error: {config_status['error']}")
+        
         st.info("""
         **Para el administrador:**
-        1. Configura las credenciales OAuth en Google Cloud Console
-        2. Agrega los secrets en Streamlit Cloud > Settings > Secrets
-        3. Consulta `docs/SETUP_GOOGLE_AUTH.md` para instrucciones
+        1. Ve a Streamlit Cloud > Settings > Secrets
+        2. Verifica que tienes la sección `[auth]` con:
+           - `client_id`
+           - `client_secret`
+           - `redirect_uri`
+           - `cookie_secret`
+           - `server_metadata_url`
+        3. Consulta `docs/SETUP_GOOGLE_AUTH.md`
         """)
         st.markdown('</div>', unsafe_allow_html=True)
 
