@@ -3,7 +3,7 @@ Módulo Balance Almendra - Procesamiento de reportes con IA
 ===========================================================
 
 Procesa reportes diarios de las 4 plantas (PDFs e imágenes) usando 
-Gemini Vision para extraer datos estructurados de:
+OpenAI GPT-4o-mini Vision para extraer datos estructurados de:
 - Inventarios de nuez y almendra
 - Procesamiento en palmistería y expellers
 - Producción de CKPO y torta
@@ -20,12 +20,12 @@ from datetime import datetime, date
 from typing import Optional, Dict, List, Any
 import pandas as pd
 
-# Intentar importar Google Generative AI
+# Intentar importar OpenAI
 try:
-    import google.generativeai as genai
-    GENAI_AVAILABLE = True
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
 except ImportError:
-    GENAI_AVAILABLE = False
+    OPENAI_AVAILABLE = False
 
 # Intentar importar PyMuPDF para PDFs
 try:
@@ -62,7 +62,7 @@ PLANTAS_CONFIG = {
     }
 }
 
-# Prompt para Gemini Vision
+# Prompt para extracción de datos
 EXTRACTION_PROMPT = """
 Analiza este reporte de planta de procesamiento de palma africana y extrae los datos en formato JSON.
 
@@ -72,7 +72,7 @@ IMPORTANTE:
 - Los valores están en kilogramos (Kg) a menos que se indique Ton
 - Convierte toneladas a kilogramos multiplicando por 1000
 
-Responde ÚNICAMENTE con el JSON, sin texto adicional:
+Responde ÚNICAMENTE con el JSON, sin texto adicional ni markdown:
 
 {
   "fecha": "YYYY-MM-DD",
@@ -121,17 +121,17 @@ Responde ÚNICAMENTE con el JSON, sin texto adicional:
 # ============================================================================
 
 def get_api_key() -> Optional[str]:
-    """Obtiene la API key de Gemini desde variables de entorno o Streamlit secrets."""
+    """Obtiene la API key de OpenAI desde variables de entorno o Streamlit secrets."""
     # Primero intentar variable de entorno
-    api_key = os.getenv('GOOGLE_API_KEY')
+    api_key = os.getenv('OPENAI_API_KEY')
     if api_key:
         return api_key
     
     # Intentar Streamlit secrets
     try:
         import streamlit as st
-        if hasattr(st, 'secrets') and 'GOOGLE_API_KEY' in st.secrets:
-            return st.secrets['GOOGLE_API_KEY']
+        if hasattr(st, 'secrets') and 'OPENAI_API_KEY' in st.secrets:
+            return st.secrets['OPENAI_API_KEY']
     except:
         pass
     
@@ -169,56 +169,65 @@ def read_image_file(image_path: str) -> bytes:
         return f.read()
 
 
-def process_file_with_gemini(file_path: str, api_key: str) -> Dict[str, Any]:
+def process_file_with_openai(file_path: str, api_key: str) -> Dict[str, Any]:
     """
-    Procesa un archivo (PDF o imagen) con Gemini Vision.
+    Procesa un archivo (PDF o imagen) con OpenAI GPT-4o-mini Vision.
     
     Args:
         file_path: Ruta al archivo
-        api_key: API key de Gemini
+        api_key: API key de OpenAI
     
     Returns:
         dict: Datos extraídos en formato estructurado
     """
-    if not GENAI_AVAILABLE:
-        raise ImportError("google-generativeai no está instalado")
+    if not OPENAI_AVAILABLE:
+        raise ImportError("openai no está instalado. Instala con: pip install openai")
     
-    # Configurar API
-    genai.configure(api_key=api_key)
-    
-    # Usar modelo con soporte para visión
-    # gemini-1.5-flash-latest soporta imágenes
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    # Inicializar cliente
+    client = OpenAI(api_key=api_key)
     
     # Determinar tipo de archivo
     ext = os.path.splitext(file_path)[1].lower()
     
-    # Preparar contenido
-    content_parts = [EXTRACTION_PROMPT]
+    # Preparar imágenes
+    image_urls = []
     
     if ext == '.pdf':
         # Convertir PDF a imágenes
         images = read_pdf_as_images(file_path)
         for img_bytes in images:
-            content_parts.append({
-                'mime_type': 'image/png',
-                'data': base64.b64encode(img_bytes).decode('utf-8')
-            })
+            base64_image = base64.b64encode(img_bytes).decode('utf-8')
+            image_urls.append(f"data:image/png;base64,{base64_image}")
     elif ext in ['.png', '.jpg', '.jpeg']:
         img_bytes = read_image_file(file_path)
         mime_type = 'image/png' if ext == '.png' else 'image/jpeg'
-        content_parts.append({
-            'mime_type': mime_type,
-            'data': base64.b64encode(img_bytes).decode('utf-8')
-        })
+        base64_image = base64.b64encode(img_bytes).decode('utf-8')
+        image_urls.append(f"data:{mime_type};base64,{base64_image}")
     else:
         raise ValueError(f"Tipo de archivo no soportado: {ext}")
     
-    # Llamar a Gemini
-    response = model.generate_content(content_parts)
+    # Construir mensaje con imágenes
+    content = [{"type": "text", "text": EXTRACTION_PROMPT}]
+    for url in image_urls:
+        content.append({
+            "type": "image_url",
+            "image_url": {"url": url, "detail": "high"}
+        })
     
-    # Parsear respuesta JSON
-    response_text = response.text.strip()
+    # Llamar a OpenAI GPT-4o-mini (más económico con visión)
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",  # Modelo más económico con soporte de visión
+        messages=[
+            {
+                "role": "user",
+                "content": content
+            }
+        ],
+        max_tokens=2000
+    )
+    
+    # Obtener respuesta
+    response_text = response.choices[0].message.content.strip()
     
     # Limpiar respuesta (a veces viene con markdown)
     if response_text.startswith('```'):
@@ -238,6 +247,16 @@ def process_file_with_gemini(file_path: str, api_key: str) -> Dict[str, Any]:
         }
 
 
+# Alias para compatibilidad
+def process_file_with_gemini(file_path: str, api_key: str) -> Dict[str, Any]:
+    """Alias que redirige a OpenAI (para compatibilidad con código existente)."""
+    # Obtener API key de OpenAI
+    openai_key = get_api_key()
+    if not openai_key:
+        raise ValueError("OPENAI_API_KEY no configurada")
+    return process_file_with_openai(file_path, openai_key)
+
+
 def process_multiple_reports(file_paths: List[str]) -> List[Dict[str, Any]]:
     """
     Procesa múltiples reportes y retorna los datos extraídos.
@@ -250,12 +269,12 @@ def process_multiple_reports(file_paths: List[str]) -> List[Dict[str, Any]]:
     """
     api_key = get_api_key()
     if not api_key:
-        raise ValueError("GOOGLE_API_KEY no configurada")
+        raise ValueError("OPENAI_API_KEY no configurada")
     
     results = []
     for path in file_paths:
         try:
-            data = process_file_with_gemini(path, api_key)
+            data = process_file_with_openai(path, api_key)
             results.append(data)
         except Exception as e:
             results.append({
@@ -379,7 +398,7 @@ def get_daily_balance(fecha: Optional[str] = None, output_path: str = 'data/bala
 
 def generate_balance_analysis(reports_data: List[Dict[str, Any]]) -> str:
     """
-    Genera un análisis del balance de almendra usando IA.
+    Genera un análisis del balance de almendra usando IA (OpenAI).
     
     Args:
         reports_data: Lista de datos de reportes procesados
@@ -389,10 +408,10 @@ def generate_balance_analysis(reports_data: List[Dict[str, Any]]) -> str:
     """
     api_key = get_api_key()
     if not api_key:
-        return "❌ API key no configurada para generar análisis"
+        return "❌ OPENAI_API_KEY no configurada para generar análisis"
     
-    if not GENAI_AVAILABLE:
-        return "❌ google-generativeai no está instalado"
+    if not OPENAI_AVAILABLE:
+        return "❌ openai no está instalado"
     
     # Preparar resumen de datos
     resumen = "DATOS DEL BALANCE DE ALMENDRA:\n\n"
@@ -425,9 +444,14 @@ def generate_balance_analysis(reports_data: List[Dict[str, Any]]) -> str:
     """
     
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.0-flash')
-        response = model.generate_content(analysis_prompt)
-        return response.text
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # Económico para análisis de texto
+            messages=[
+                {"role": "user", "content": analysis_prompt}
+            ],
+            max_tokens=1000
+        )
+        return response.choices[0].message.content
     except Exception as e:
         return f"❌ Error generando análisis: {str(e)}"
