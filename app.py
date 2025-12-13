@@ -1198,72 +1198,9 @@ todas_alertas = alertas_upstream + alertas_downstream
 # 4.7 - ÁREA PRINCIPAL: ROUTING DE VISTAS
 # =============================================================================
 
-# Header principal con banner y video animado del logo
+# Header principal - Banner
 st.markdown('<div id="main-content"></div>', unsafe_allow_html=True)
-
-# Banner de encabezado (ancho completo)
 st.image("assets/banner2.png", use_container_width=True)
-
-# Video banner animado del logo
-import base64
-import os
-
-video_path = "assets/logo_animado.mp4"
-if os.path.exists(video_path):
-    # Leer el video y convertirlo a base64 para embed
-    with open(video_path, "rb") as video_file:
-        video_bytes = video_file.read()
-        video_base64 = base64.b64encode(video_bytes).decode()
-    
-    # Mostrar video pequeño como logo en la esquina + título
-    st.markdown(f"""
-    <div style="
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        margin-bottom: 1rem;
-    ">
-        <div style="
-            width: 240px;
-            height: 130px;
-            overflow: hidden;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-            flex-shrink: 0;
-        ">
-            <video 
-                autoplay 
-                loop 
-                muted 
-                playsinline
-                style="
-                    width: 100%;
-                    height: 130%;
-                    object-fit: cover;
-                    object-position: center center;
-                    margin-top: -15%;
-                "
-            >
-                <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
-            </video>
-        </div>
-        <div>
-            <h1 style="
-                margin: 0;
-                font-size: 2.5rem;
-                font-weight: 800;
-                background: linear-gradient(135deg, #00d68f 0%, #39d353 25%, #0bc5ea 50%, #58a6ff 75%, #ffaa00 100%);
-                background-size: 300% auto;
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-            ">🌴 Oleoflores BI Dashboard</h1>
-            <p style="margin: 0.25rem 0 0 0; color: #8b949e; font-size: 0.95rem;">Business Intelligence | Farm-to-Fork</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.title("🌴 Oleoflores BI Dashboard")
 
 # Mostrar errores de carga si existen
 if error_upstream:
