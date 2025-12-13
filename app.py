@@ -1198,9 +1198,11 @@ todas_alertas = alertas_upstream + alertas_downstream
 # 4.7 - ÁREA PRINCIPAL: ROUTING DE VISTAS
 # =============================================================================
 
-# Header principal - Banner
+# Header principal - Banner (tamaño reducido ~5x)
 st.markdown('<div id="main-content"></div>', unsafe_allow_html=True)
-st.image("assets/banner2.png", use_container_width=True)
+col1, col2, col3 = st.columns([1, 3, 1])  # Banner centrado, más pequeño
+with col2:
+    st.image("assets/banner2.png", use_container_width=True)
 
 # Mostrar errores de carga si existen
 if error_upstream:
