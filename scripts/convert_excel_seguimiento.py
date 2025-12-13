@@ -23,37 +23,38 @@ from datetime import datetime
 # ============================================================================
 # NOTA: Usamos las filas "Ext [Planta] Proy/Real" que contienen RFF PROCESADA
 # Las filas "Planta Proyección/Real" son datos de ENTRADA, no de extracción
+# tea_meta se extrae dinámicamente del Excel (del nombre de fila como "TEA% 18.6%")
 PLANTAS_CONFIG = {
     'Codazzi': {
         'fila_rff_proy': 4,     # "Ext Codazzi Proy" - RFF procesada proyectada
         'fila_rff_real': 5,     # "Ext Codazzi Real" - RFF procesada real
         'fila_cpo': 6,          # "CPO"
-        'fila_tea': 7,          # "TEA%"
-        'tea_meta': 21.6,
+        'fila_tea': 7,          # "TEA% XX%" - la meta se extrae del nombre
+        'tea_meta_default': 21.6,  # Fallback si no se puede leer del Excel
         'tiene_almendra': True,
     },
     'MLB': {
         'fila_rff_proy': 11,    # "Ext MLB Proy"
         'fila_rff_real': 12,    # "Ext MLB Real"
         'fila_cpo': 13,
-        'fila_tea': 14,
-        'tea_meta': 18.6,
+        'fila_tea': 14,         # "TEA% XX%" - la meta se extrae del nombre
+        'tea_meta_default': 18.6,  # Fallback si no se puede leer del Excel
         'tiene_almendra': False,
     },
     'Sinú': {
         'fila_rff_proy': 18,    # "Ext SINÚ Proy"
         'fila_rff_real': 19,    # "Ext SINÚ Real"
         'fila_cpo': 20,
-        'fila_tea': 21,
-        'tea_meta': 22.0,
+        'fila_tea': 21,         # "TEA% XX%" - la meta se extrae del nombre
+        'tea_meta_default': 22.0,  # Fallback si no se puede leer del Excel
         'tiene_almendra': False,
     },
     'A&G': {
         'fila_rff_proy': 25,    # "Ext A&GC Proy"
         'fila_rff_real': 26,    # "Ext A&GC Real"
         'fila_cpo': 27,
-        'fila_tea': 28,
-        'tea_meta': 23.5,
+        'fila_tea': 28,         # "TEA% XX%" - la meta se extrae del nombre
+        'tea_meta_default': 23.5,  # Fallback si no se puede leer del Excel
         'tiene_almendra': False,
     },
 }
@@ -65,6 +66,30 @@ ALMENDRA_CONFIG = {
     'fila_kpo': 54,
     'fila_tea_almendra': 55,
 }
+
+
+def extract_tea_meta_from_row(df, row_idx):
+    """
+    Extrae el valor de TEA meta del nombre de la fila.
+    Ejemplo: "TEA% 18.6%" -> 18.6
+    
+    Args:
+        df: DataFrame del Excel
+        row_idx: Índice de la fila de TEA
+    
+    Returns:
+        float: Valor de TEA meta, o None si no se puede extraer
+    """
+    try:
+        cell_value = str(df.iloc[row_idx, 0])  # Primera columna (ZONA)
+        # Buscar patrón "TEA% XX%" o "TEA% XX,X%"
+        match = re.search(r'TEA%?\s*([\d,\.]+)%?', cell_value, re.IGNORECASE)
+        if match:
+            value_str = match.group(1).replace(',', '.')
+            return float(value_str)
+    except Exception as e:
+        print(f"   ⚠️ No se pudo extraer TEA meta de fila {row_idx}: {e}")
+    return None
 
 
 def detect_date_columns(df):
@@ -125,7 +150,20 @@ def extract_upstream_data(df, date_columns):
     """
     records = []
     
+    # Primero, extraer las metas de TEA de cada planta desde el Excel
+    metas_tea = {}
     for planta, config in PLANTAS_CONFIG.items():
+        tea_meta = extract_tea_meta_from_row(df, config['fila_tea'])
+        if tea_meta is not None:
+            metas_tea[planta] = tea_meta
+            print(f"   ✅ {planta}: TEA meta = {tea_meta}% (leído del Excel)")
+        else:
+            metas_tea[planta] = config['tea_meta_default']
+            print(f"   ⚠️ {planta}: TEA meta = {config['tea_meta_default']}% (valor por defecto)")
+    
+    for planta, config in PLANTAS_CONFIG.items():
+        tea_meta = metas_tea[planta]
+        
         for col_idx, fecha in date_columns.items():
             # Obtener valores de las celdas (usando filas de Extracción = RFF Procesada)
             rff_proy = safe_float(df.iloc[config['fila_rff_proy'], col_idx])
@@ -139,8 +177,8 @@ def extract_upstream_data(df, date_columns):
             
             # Agregar si hay presupuesto O datos reales (para incluir días sin producción)
             if rff_proy > 0 or rff_real > 0 or cpo_real > 0:
-                # Calcular presupuesto de CPO basado en TEA meta
-                cpo_proy = rff_proy * (config['tea_meta'] / 100) if rff_proy > 0 else 0
+                # Calcular presupuesto de CPO basado en TEA meta (dinámico)
+                cpo_proy = rff_proy * (tea_meta / 100) if rff_proy > 0 else 0
                 
                 # Palmiste estimado (~5% del CPO)
                 palmiste_real = cpo_real * 0.05
@@ -156,7 +194,7 @@ def extract_upstream_data(df, date_columns):
                     'palmiste_real': round(palmiste_real, 2),
                     'palmiste_presupuesto': round(palmiste_proy, 2),
                     'tea_real': round(tea_value, 2),
-                    'tea_meta': config['tea_meta'],
+                    'tea_meta': tea_meta,  # Ahora es dinámico
                     'almendra_real': 0,
                     'almendra_presupuesto': 0,
                     'kpo_real': 0,
