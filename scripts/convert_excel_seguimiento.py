@@ -37,7 +37,7 @@ PLANTAS_CONFIG = {
         'fila_rff_real': 12,    # "Ext MLB Real"
         'fila_cpo': 13,
         'fila_tea': 14,
-        'tea_meta': 18.8,
+        'tea_meta': 18.6,
         'tiene_almendra': False,
     },
     'Sinú': {
