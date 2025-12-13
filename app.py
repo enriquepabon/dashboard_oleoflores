@@ -113,6 +113,16 @@ st.markdown("""
 <!-- Preload critical fonts to reduce CLS -->
 <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2" as="font" type="font/woff2" crossorigin>
 
+<!-- PWA Meta Tags -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Oleoflores">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="manifest" href="app/static/manifest.json">
+<link rel="apple-touch-icon" href="app/static/icon-192.png">
+
 <!-- Skip Navigation Link for Accessibility -->
 <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
 
@@ -796,6 +806,105 @@ st.markdown("""
         color: var(--text-muted);
         font-size: 0.8rem;
         margin-top: 4px;
+    }
+    
+    /* -------------------------------------------------------------------------
+       MOBILE RESPONSIVE STYLES
+       ------------------------------------------------------------------------- */
+    
+    /* Tablets and smaller */
+    @media (max-width: 1024px) {
+        .sidebar-title {
+            font-size: 1.3rem !important;
+        }
+        
+        [data-testid="stMetric"] {
+            padding: 12px !important;
+        }
+        
+        [data-testid="stMetric"] label {
+            font-size: 0.75rem !important;
+        }
+        
+        [data-testid="stMetric"] [data-testid="stMetricValue"] {
+            font-size: 1.3rem !important;
+        }
+    }
+    
+    /* Mobile phones */
+    @media (max-width: 768px) {
+        /* Hide sidebar by default on mobile - user can swipe */
+        [data-testid="stSidebar"] {
+            width: 280px !important;
+        }
+        
+        /* Reduce header sizes */
+        h1 {
+            font-size: 1.5rem !important;
+        }
+        
+        h2 {
+            font-size: 1.25rem !important;
+        }
+        
+        h3 {
+            font-size: 1.1rem !important;
+        }
+        
+        /* Stack columns on mobile */
+        [data-testid="column"] {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+        
+        /* Smaller metrics */
+        [data-testid="stMetric"] {
+            padding: 10px !important;
+        }
+        
+        [data-testid="stMetric"] [data-testid="stMetricValue"] {
+            font-size: 1.1rem !important;
+        }
+        
+        /* Adjust charts for mobile */
+        .js-plotly-plot {
+            margin: 0 -10px !important;
+        }
+        
+        /* Better touch targets */
+        button, [role="button"] {
+            min-height: 44px !important;
+            min-width: 44px !important;
+        }
+        
+        /* Reduce padding on main content */
+        .main .block-container {
+            padding: 1rem 0.5rem !important;
+        }
+        
+        /* Banner adjusts */
+        img {
+            border-radius: 4px !important;
+        }
+    }
+    
+    /* Small phones */
+    @media (max-width: 480px) {
+        h1 {
+            font-size: 1.25rem !important;
+        }
+        
+        [data-testid="stMetric"] [data-testid="stMetricValue"] {
+            font-size: 1rem !important;
+        }
+        
+        .sidebar-title {
+            font-size: 1.1rem !important;
+        }
+        
+        .sidebar-subtitle {
+            font-size: 0.7rem !important;
+        }
     }
     
 </style>
