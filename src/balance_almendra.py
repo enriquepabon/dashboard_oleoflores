@@ -380,16 +380,26 @@ def get_daily_balance(fecha: Optional[str] = None, output_path: str = 'data/bala
     if not os.path.exists(output_path):
         return pd.DataFrame()
     
-    df = pd.read_csv(output_path)
+    try:
+        df = pd.read_csv(output_path)
+    except Exception:
+        return pd.DataFrame()
+    
+    # Validar que hay datos
+    if df.empty or 'fecha' not in df.columns:
+        return pd.DataFrame()
+    
+    # Filtrar filas con fecha válida
+    df = df.dropna(subset=['fecha'])
+    if df.empty:
+        return pd.DataFrame()
     
     if fecha:
         return df[df['fecha'] == fecha]
     else:
         # Retornar fecha más reciente
-        if not df.empty:
-            latest_date = df['fecha'].max()
-            return df[df['fecha'] == latest_date]
-        return df
+        latest_date = df['fecha'].max()
+        return df[df['fecha'] == latest_date]
 
 
 # ============================================================================
