@@ -1090,9 +1090,13 @@ with st.sidebar:
     elif "MTD" in periodo_seleccionado:
         # Mes a la fecha (Month to Date) - usa AYER porque datos reales tienen 1 día de retraso
         fecha_inicio = datetime(año_sel, mes_sel, 1).date()
-        hoy = datetime.now().date()
-        ayer = hoy - timedelta(days=1)
-        if año_sel == hoy.year and mes_sel == hoy.month:
+        # Usar hora de Colombia (UTC-5)
+        from datetime import timezone
+        colombia_offset = timedelta(hours=-5)
+        colombia_tz = timezone(colombia_offset)
+        hoy_colombia = datetime.now(colombia_tz).date()
+        ayer = hoy_colombia - timedelta(days=1)
+        if año_sel == hoy_colombia.year and mes_sel == hoy_colombia.month:
             # Mes actual: desde día 1 hasta ayer
             fecha_fin = ayer if ayer.month == mes_sel else datetime(año_sel, mes_sel, 1).date()
         else:
