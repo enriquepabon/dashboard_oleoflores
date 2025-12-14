@@ -841,6 +841,94 @@ def create_trend_line_chart(
 
 
 # =============================================================================
+# MULTI-LINE CHART (MÚLTIPLES SERIES)
+# =============================================================================
+
+def create_multi_line_chart(
+    df: pd.DataFrame,
+    x_column: str = "fecha",
+    y_columns: List[str] = None,
+    y_names: List[str] = None,
+    title: str = "Evolución Temporal",
+    y_title: str = "Toneladas",
+    show_markers: bool = True,
+    colors: List[str] = None
+) -> go.Figure:
+    """
+    Crea un gráfico de líneas con múltiples series dinámicas.
+    
+    Args:
+        df: DataFrame con los datos
+        x_column: Columna para eje X
+        y_columns: Lista de columnas para las líneas
+        y_names: Nombres para la leyenda (si None, usa los nombres de columnas)
+        title: Título del gráfico
+        y_title: Título del eje Y
+        show_markers: Mostrar puntos en las líneas
+        colors: Colores personalizados para las líneas
+    
+    Returns:
+        Figura Plotly Line
+    """
+    fig = go.Figure()
+    
+    if y_columns is None or len(y_columns) == 0:
+        return create_empty_chart("No hay columnas para graficar")
+    
+    if y_names is None:
+        y_names = [col.replace('_', ' ').title() for col in y_columns]
+    
+    if colors is None:
+        colors = CHART_COLORS
+    
+    # Ordenar por fecha
+    df = df.sort_values(x_column)
+    
+    mode = "lines+markers" if show_markers else "lines"
+    
+    for i, (col, name) in enumerate(zip(y_columns, y_names)):
+        if col not in df.columns:
+            continue
+        
+        color = colors[i % len(colors)]
+        
+        fig.add_trace(go.Scatter(
+            x=df[x_column],
+            y=df[col],
+            mode=mode,
+            name=name,
+            line={
+                "color": color,
+                "width": 2
+            },
+            marker={"size": 6},
+            hovertemplate=(
+                f"<b>{name}</b><br>"
+                "Fecha: %{x}<br>"
+                "Valor: %{y:,.0f}<br>"
+                "<extra></extra>"
+            )
+        ))
+    
+    fig.update_layout(
+        xaxis_title="Fecha",
+        yaxis_title=y_title,
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "center",
+            "x": 0.5
+        },
+        hovermode="x unified"
+    )
+    
+    fig = apply_layout_defaults(fig, title, height=400)
+    
+    return fig
+
+
+# =============================================================================
 # FUNCIONES AUXILIARES
 # =============================================================================
 
@@ -898,38 +986,54 @@ def create_tank_chart(
     nombres = list(tanques.keys())
     niveles = list(tanques.values())
     caps = [capacidades.get(n, 1000) for n in nombres]
-    vacios = [c - n for c, n in zip(caps, niveles)]
+    vacios = [max(0, c - n) for c, n in zip(caps, niveles)]
+    porcentajes = [n / c * 100 if c > 0 else 0 for n, c in zip(niveles, caps)]
     
     fig = go.Figure()
     
-    # Parte llena (abajo)
+    # Parte llena (abajo) - Color vibrante
     fig.add_trace(go.Bar(
         x=nombres,
         y=niveles,
-        name="Nivel Actual",
+        name="🟠 Contenido",
         marker_color=color_lleno,
-        text=[f"{n:,.0f}" for n in niveles],
+        marker_line_color='white',
+        marker_line_width=1,
+        text=[f"{n:,.0f}<br>({p:.0f}%)" for n, p in zip(niveles, porcentajes)],
         textposition="inside",
-        textfont={"size": 12, "color": "white"},
-        hovertemplate="<b>%{x}</b><br>Nivel: %{y:,.0f} Ton<extra></extra>"
+        textfont={"size": 11, "color": "white", "family": "Arial Black"},
+        hovertemplate="<b>%{x}</b><br>Contenido: %{y:,.0f} Ton<extra></extra>"
     ))
     
-    # Parte vacía (arriba)
+    # Parte vacía (arriba) - Color más claro/transparente con borde
     fig.add_trace(go.Bar(
         x=nombres,
         y=vacios,
-        name="Capacidad Disponible",
-        marker_color=color_vacio,
+        name="⬜ Disponible",
+        marker_color="rgba(200, 200, 200, 0.3)",  # Semi-transparente
+        marker_line_color="rgba(150, 150, 150, 0.8)",
+        marker_line_width=2,
+        text=[f"{v:,.0f}" for v in vacios],
+        textposition="inside",
+        textfont={"size": 10, "color": "rgba(150, 150, 150, 0.8)"},
         hovertemplate="<b>%{x}</b><br>Disponible: %{y:,.0f} Ton<extra></extra>"
     ))
     
     fig.update_layout(
         barmode="stack",
-        showlegend=False,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10)
+        ),
         yaxis_title="Toneladas",
         xaxis_title=None,
-        height=300,
-        margin={"l": 40, "r": 20, "t": 40, "b": 40},
+        height=320,
+        margin={"l": 40, "r": 20, "t": 50, "b": 40},
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)"
     )

@@ -34,6 +34,7 @@ from src.plots import (
     create_area_chart,
     create_bullet_chart,
     create_trend_line_chart,
+    create_multi_line_chart,
     create_empty_chart,
     create_tank_chart,
     get_semaforo_color,
@@ -925,6 +926,13 @@ st.markdown("""
         }
     }
     
+    /* Allow main content to use full width */
+    .main .block-container {
+        max-width: 100% !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
@@ -1046,19 +1054,21 @@ with st.sidebar:
     # ========== CREAR OPCIONES DE PERÍODO ==========
     opciones_periodo = []
     
-    # Agregar semanas del mes seleccionado
-    for semana, (inicio, fin) in semanas_mes.items():
-        opciones_periodo.append(f"📊 {semana} ({inicio.day}-{fin.day} {nombre_mes[:3]})")
+    # MTD primero (por defecto)
+    opciones_periodo.append(f"📆 MTD ({nombre_mes} a la fecha)")
     
-    # Agregar opciones de acumulado
-    opciones_periodo.append(f"📆 Mes completo ({nombre_mes})")
-    opciones_periodo.append("📅 Año (YTD)")
+    # Agregar semanas del mes seleccionado con TD (To Date)
+    for semana, (inicio, fin) in semanas_mes.items():
+        opciones_periodo.append(f"📊 {semana}TD ({inicio.day}-{fin.day} {nombre_mes[:3]})")
+    
+    # Agregar opciones adicionales  
+    opciones_periodo.append("📅 YTD (Año a la fecha)")
     opciones_periodo.append("🔧 Personalizado")
     
     periodo_seleccionado = st.selectbox(
         "Rango de fechas",
         options=opciones_periodo,
-        index=0,  # Por defecto: S1
+        index=0,  # Por defecto: MTD
         key="periodo_selector"
     )
     
@@ -1077,17 +1087,29 @@ with st.sidebar:
                 "Hasta",
                 value=datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
             )
-    elif "Mes completo" in periodo_seleccionado:
-        # Mes completo seleccionado
+    elif "MTD" in periodo_seleccionado:
+        # Mes a la fecha (Month to Date) - usa AYER porque datos reales tienen 1 día de retraso
         fecha_inicio = datetime(año_sel, mes_sel, 1).date()
-        fecha_fin = datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
+        hoy = datetime.now().date()
+        ayer = hoy - timedelta(days=1)
+        if año_sel == hoy.year and mes_sel == hoy.month:
+            # Mes actual: desde día 1 hasta ayer
+            fecha_fin = ayer if ayer.month == mes_sel else datetime(año_sel, mes_sel, 1).date()
+        else:
+            # Mes pasado: mes completo
+            fecha_fin = datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
     elif "YTD" in periodo_seleccionado:
         # Año hasta la fecha (Year to Date)
         fecha_inicio = datetime(año_sel, 1, 1).date()
-        fecha_fin = datetime(año_sel, mes_sel, monthrange(año_sel, mes_sel)[1]).date()
+        hoy = datetime.now().date()
+        if año_sel == hoy.year:
+            fecha_fin = hoy
+        else:
+            fecha_fin = datetime(año_sel, 12, 31).date()
     else:
-        # Es una semana (S1, S2, S3, S4, S5)
+        # Es una semana (S1TD, S2TD, S3TD, S4TD, S5TD)
         for semana, (inicio, fin) in semanas_mes.items():
+            # Buscar S1, S2, etc. en el nombre
             if semana in periodo_seleccionado:
                 fecha_inicio = inicio
                 fecha_fin = fin
@@ -1347,10 +1369,16 @@ if todas_alertas:
             else:
                 st.warning(f"{alerta['mensaje']}\n\n{alerta['detalle']}")
 
-# Indicador de filtros activos
+# Indicador de filtros activos con fechas
 filtros_activos = []
-if periodo_seleccionado != "YTD (Año actual)":
-    filtros_activos.append(f"📅 {periodo_seleccionado}")
+# Mostrar rango de fechas
+fecha_str = f"{fecha_inicio.strftime('%d/%m')} → {fecha_fin.strftime('%d/%m')}"
+if "MTD" in periodo_seleccionado:
+    filtros_activos.append(f"📅 MTD ({fecha_str})")
+elif "YTD" in periodo_seleccionado:
+    filtros_activos.append(f"📅 YTD ({fecha_str})")
+else:
+    filtros_activos.append(f"📅 {fecha_str}")
 if not todas_zonas:
     filtros_activos.append(f"🗺️ {len(zonas_seleccionadas)} zonas")
 
@@ -1514,7 +1542,7 @@ elif vista_seleccionada == "🌾 Upstream":
             
             # Agregar fila TOTAL
             total_rff = pd.DataFrame({
-                'Planta': ['**TOTAL**'],
+                'Planta': ['══ TOTAL'],
                 'ME': [df_rff['ME'].sum()],
                 'Real': [df_rff['Real'].sum()],
                 'Dif': [df_rff['Dif'].sum()],
@@ -1550,7 +1578,7 @@ elif vista_seleccionada == "🌾 Upstream":
             
             # Agregar fila TOTAL
             total_cpo = pd.DataFrame({
-                'Planta': ['**TOTAL**'],
+                'Planta': ['══ TOTAL'],
                 'CPO ME': [df_cpo['CPO ME'].sum()],
                 'CPO Real': [df_cpo['CPO Real'].sum()],
                 'Dif TM': [df_cpo['Dif TM'].sum()],
@@ -1610,7 +1638,7 @@ elif vista_seleccionada == "🌾 Upstream":
             ))
             
             total_tea = pd.DataFrame({
-                'Planta': ['**TOTAL**'],
+                'Planta': ['══ TOTAL'],
                 'TEA ME': [tea_me_total],
                 'TEA Real': [tea_real_total],
             })
@@ -1641,15 +1669,17 @@ elif vista_seleccionada == "🌾 Upstream":
         with col_inv:
             # Tabla de inventario CPO
             if 'inventario_cpo' in df_upstream.columns:
-                df_inv = df_upstream.groupby('zona').agg({
+                # Asegurar orden por fecha para que 'last' sea el día más reciente
+                df_sorted = df_upstream.sort_values('fecha')
+                df_inv = df_sorted.groupby('zona').agg({
                     'inventario_cpo': 'last'
                 }).reset_index()
                 df_inv.columns = ['Planta', 'TM']
                 df_inv['TM'] = df_inv['TM'].apply(lambda x: f"{x:,.0f}")
                 
                 # Total
-                total_inv = df_upstream.groupby('zona')['inventario_cpo'].last().sum()
-                df_inv_total = pd.DataFrame({'Planta': ['**TOTAL**'], 'TM': [f"{total_inv:,.0f}"]})
+                total_inv = df_sorted.groupby('zona')['inventario_cpo'].last().sum()
+                df_inv_total = pd.DataFrame({'Planta': ['══ TOTAL'], 'TM': [f"{total_inv:,.0f}"]})
                 df_inv = pd.concat([df_inv, df_inv_total])
                 
                 st.markdown("**Inventario CPO por Planta**")
@@ -1657,48 +1687,91 @@ elif vista_seleccionada == "🌾 Upstream":
         
         with col_tank:
             st.markdown("**Niveles de Tanques CPO**")
-            # Gráficos de tanques por zona
-            if all(col in df_upstream.columns for col in ['tanque_1', 'tanque_2']):
-                tabs_tanques = st.tabs(["🌴 Codazzi", "🏭 MLB", "🌾 A&G", "🌿 Sinú"])
-                
-                # Colores por zona
-                colores_zona = {
-                    "Codazzi": "#F9A825",  # Dorado
-                    "MLB": "#1565C0",       # Azul
-                    "A&G": "#2E7D32",       # Verde
-                    "Sinú": "#EF6C00"       # Naranja
-                }
-                
-                for i, zona in enumerate(["Codazzi", "MLB", "A&G", "Sinú"]):
-                    with tabs_tanques[i]:
-                        df_zona_filter = df_upstream[df_upstream['zona'] == zona]
-                        if not df_zona_filter.empty:
-                            df_zona_tank = df_zona_filter.iloc[-1]
-                            
-                            # Recopilar todos los tanques (incluyendo los con valor > 0)
-                            tanques = {}
-                            for j in range(1, 5):
-                                col_tank_name = f'tanque_{j}'
-                                if col_tank_name in df_upstream.columns:
-                                    valor = df_zona_tank[col_tank_name]
-                                    if valor > 0:
-                                        tanques[f'TK {j}'] = valor
-                            
-                            if tanques:
-                                # Mostrar info del inventario total
-                                total_tanques = sum(tanques.values())
-                                st.metric(f"Inventario Total {zona}", f"{total_tanques:,.0f} Ton")
-                                
-                                fig_tank = create_tank_chart(
-                                    tanques=tanques,
-                                    title="",
-                                    color_lleno=colores_zona.get(zona, "#F9A825")
-                                )
-                                st.plotly_chart(fig_tank, use_container_width=True)
-                            else:
-                                st.info(f"Sin inventario en tanques para {zona}")
+            
+            # Capacidades de tanques por planta (ton)
+            CAPACIDADES_PLANTA = {
+                "Sinú": {"TK 1": 180, "TK 2": 460},  # Total: 640
+                "MLB": {"TK 1": 350, "TK 2": 500},   # Total: 850
+                "A&G": {"TK 1": 300, "TK 2": 400},   # Total: 700
+                "Codazzi": {"TK 2": 1200, "TK 3": 1200, "TK 4": 1200, "TK 6": 1200},  # Las Flores - Total: 4800
+            }
+            
+            tabs_tanques = st.tabs(["🌴 Codazzi", "🏭 MLB", "🌾 A&G", "🌿 Sinú"])
+            
+            # Colores por zona
+            colores_zona = {
+                "Codazzi": "#F9A825",  # Dorado
+                "MLB": "#1565C0",       # Azul
+                "A&G": "#2E7D32",       # Verde
+                "Sinú": "#EF6C00"       # Naranja
+            }
+            
+            for i, zona in enumerate(["Codazzi", "MLB", "A&G", "Sinú"]):
+                with tabs_tanques[i]:
+                    # Filtrar datos de la zona y ordenar por fecha
+                    df_zona = df_upstream[df_upstream['zona'] == zona].sort_values('fecha')
+                    
+                    # Obtener último registro CON datos de tanques (tanque_1 > 0)
+                    if 'tanque_1' in df_zona.columns:
+                        df_con_tanques = df_zona[df_zona['tanque_1'] > 0]
+                        if not df_con_tanques.empty:
+                            df_zona_tank = df_con_tanques.iloc[-1]
+                        elif not df_zona.empty:
+                            df_zona_tank = df_zona.iloc[-1]
                         else:
-                            st.warning(f"No hay datos para {zona}")
+                            df_zona_tank = None
+                    elif not df_zona.empty:
+                        df_zona_tank = df_zona.iloc[-1]
+                    else:
+                        df_zona_tank = None
+                    
+                    if df_zona_tank is not None:
+                        inventario_total = df_zona_tank['inventario_cpo'] if 'inventario_cpo' in df_zona_tank else 0
+                        
+                        # Obtener capacidades de la planta
+                        capacidades = CAPACIDADES_PLANTA.get(zona, {"TK 1": 500, "TK 2": 500})
+                        capacidad_total = sum(capacidades.values())
+                        
+                        st.metric(f"Inventario Total {zona}", f"{inventario_total:,.0f} Ton")
+                        
+                        # Usar valores reales de tanques del CSV
+                        tanques = {}
+                        tank_names = list(capacidades.keys())
+                        for j, tk_name in enumerate(tank_names):
+                            col_name = f'tanque_{j+1}'
+                            if col_name in df_zona_tank.index:
+                                valor = df_zona_tank[col_name]
+                                tanques[tk_name] = float(valor) if not pd.isna(valor) else 0.0
+                            else:
+                                tanques[tk_name] = 0.0
+                        
+                        # Crear gráfico de tanques con capacidad
+                        from src.plots import create_tank_chart
+                        fig_tank = create_tank_chart(
+                            tanques=tanques,
+                            capacidades=capacidades,
+                            title="",
+                            color_lleno=colores_zona.get(zona, "#F9A825"),
+                            color_vacio="#374151"  # Gris oscuro para parte vacía
+                        )
+                        st.plotly_chart(fig_tank, use_container_width=True)
+                        
+                        # Mostrar tabla resumen
+                        df_tabla = pd.DataFrame([
+                            {"Tanque": tk, "Capacidad (ton)": cap, "Contenido (ton)": round(tanques.get(tk, 0), 1), 
+                             "Disponible (ton)": round(cap - tanques.get(tk, 0), 1)}
+                            for tk, cap in capacidades.items()
+                        ])
+                        inv_real = sum(tanques.values())
+                        df_tabla.loc[len(df_tabla)] = {
+                            "Tanque": "══ TOTAL", 
+                            "Capacidad (ton)": capacidad_total,
+                            "Contenido (ton)": round(inv_real, 1),
+                            "Disponible (ton)": round(capacidad_total - inv_real, 1)
+                        }
+                        st.dataframe(df_tabla, use_container_width=True, hide_index=True)
+                    else:
+                        st.warning(f"No hay datos para {zona}")
         
         st.divider()
         
@@ -1708,10 +1781,101 @@ elif vista_seleccionada == "🌾 Upstream":
         if 'acidez' in df_upstream.columns:
             st.subheader("🔬 Parámetros de Calidad del CPO")
             
-            df_calidad = create_quality_table(df_upstream)
-            if not df_calidad.empty:
-                st.dataframe(df_calidad, use_container_width=True, hide_index=True)
-                st.caption("🟢 Óptimo | 🟡 Aceptable | 🔴 Fuera de rango")
+            # Filtrar registros con datos de calidad
+            df_calidad_data = df_upstream[df_upstream['acidez'] > 0].copy()
+            
+            if not df_calidad_data.empty:
+                # Calcular H+I
+                df_calidad_data['h_i'] = df_calidad_data['humedad'] + df_calidad_data['impurezas']
+                
+                # Gráfico de tendencia de acidez por planta (ancho completo)
+                import plotly.express as px
+                
+                fig_acidez = px.line(
+                    df_calidad_data.sort_values('fecha'),
+                    x='fecha',
+                    y='acidez',
+                    color='zona',
+                    title='Tendencia de Acidez por Planta',
+                    markers=True,
+                    color_discrete_map={
+                        "Codazzi": "#F9A825",
+                        "MLB": "#1565C0",
+                        "A&G": "#2E7D32",
+                        "Sinú": "#EF6C00"
+                    }
+                )
+                
+                # Línea de alerta en 4%
+                fig_acidez.add_hline(y=4, line_dash="dash", line_color="red", 
+                                     annotation_text="Límite 4%", annotation_position="right")
+                
+                fig_acidez.update_layout(
+                    height=350,
+                    yaxis_title="Acidez %",
+                    xaxis_title="",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    legend=dict(orientation="h", y=-0.15, x=0.5, xanchor="center"),
+                    xaxis=dict(
+                        tickformat="%d %b",
+                        dtick="D1",  # Mostrar cada día
+                        tickangle=-45
+                    )
+                )
+                st.plotly_chart(fig_acidez, use_container_width=True)
+                
+                # Tabla y alertas en columnas
+                col_tabla, col_alertas = st.columns([2, 1])
+                
+                with col_tabla:
+                    # Tabla resumen por planta
+                    st.markdown("### 📊 Resumen de Calidad por Planta")
+                    df_resumen = df_calidad_data.groupby('zona').agg({
+                        'acidez': 'mean',
+                        'humedad': 'mean',
+                        'impurezas': 'mean',
+                        'h_i': 'mean'
+                    }).round(2).reset_index()
+                    
+                    df_resumen.columns = ['Planta', 'Acidez %', 'Humedad %', 'Impurezas %', 'H+I %']
+                    
+                    # Agregar semáforos
+                    df_resumen['Acidez %'] = df_resumen['Acidez %'].apply(
+                        lambda x: f"{'🔴' if x > 4 else '🟢'} {x:.2f}%"
+                    )
+                    df_resumen['H+I %'] = df_resumen['H+I %'].apply(
+                        lambda x: f"{'🔴' if x > 1 else '🟢'} {x:.2f}%"
+                    )
+                    df_resumen['Humedad %'] = df_resumen['Humedad %'].apply(lambda x: f"{x:.2f}%")
+                    df_resumen['Impurezas %'] = df_resumen['Impurezas %'].apply(lambda x: f"{x:.3f}%")
+                    
+                    st.dataframe(df_resumen, use_container_width=True, hide_index=True)
+                    st.caption("🟢 Óptimo (Acidez ≤ 4%, H+I ≤ 1%) | 🔴 Fuera de rango")
+                
+                with col_alertas:
+                    st.markdown("### ⚠️ Alertas de Calidad")
+                    
+                    # Alertas Acidez > 4%
+                    alertas_acidez = df_calidad_data[df_calidad_data['acidez'] > 4].copy()
+                    if not alertas_acidez.empty:
+                        st.error(f"🔴 **Acidez > 4%**: {len(alertas_acidez)} registros")
+                        # Mostrar fecha y planta
+                        for _, row in alertas_acidez.iterrows():
+                            fecha_str = pd.to_datetime(row['fecha']).strftime('%d/%m')
+                            st.markdown(f"- **{fecha_str}** {row['zona']}: {row['acidez']:.2f}%")
+                    else:
+                        st.success("✅ Acidez dentro de límites")
+                    
+                    # Alertas H+I > 1%
+                    alertas_hi = df_calidad_data[df_calidad_data['h_i'] > 1].copy()
+                    if not alertas_hi.empty:
+                        st.error(f"🔴 **H+I > 1%**: {len(alertas_hi)} registros")
+                        for _, row in alertas_hi.iterrows():
+                            fecha_str = pd.to_datetime(row['fecha']).strftime('%d/%m')
+                            st.markdown(f"- **{fecha_str}** {row['zona']}: {row['h_i']:.2f}%")
+                    else:
+                        st.success("✅ H+I dentro de límites")
         
         st.divider()
         
@@ -1948,7 +2112,7 @@ elif vista_seleccionada == "🏭 Downstream":
             # Total
             pct_total = (total_real / total_me * 100) if total_me > 0 else 0
             data_down.append({
-                'Producto': '**TOTAL**',
+                'Producto': '══ TOTAL',
                 'ME (Ton)': f"{total_me:,.0f}",
                 'Real (Ton)': f"{total_real:,.0f}",
                 'Diferencia': f"{total_real - total_me:+,.0f}",
@@ -2004,7 +2168,7 @@ elif vista_seleccionada == "🏭 Downstream":
             col_ref = [c for c in df_pivot.columns if c != 'fecha']
             
             if col_ref:
-                fig_linea = create_trend_line_chart(
+                fig_linea = create_multi_line_chart(
                     df_pivot,
                     x_column='fecha',
                     y_columns=col_ref,
