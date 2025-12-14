@@ -2558,6 +2558,15 @@ elif vista_seleccionada == "🥜 Balance Almendra":
 # =============================================================================
 
 st.divider()
+
+# Botón de refrescar para móviles
+col_refresh1, col_refresh2, col_refresh3 = st.columns([1, 2, 1])
+with col_refresh2:
+    if st.button("🔄 Actualizar Dashboard", use_container_width=True, type="secondary"):
+        st.cache_data.clear()
+        st.rerun()
+
+st.divider()
 st.markdown(
     """
     <div style='text-align: center; color: #999999; font-size: 12px; padding: 1rem 0;'>
