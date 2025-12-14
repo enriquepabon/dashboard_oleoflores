@@ -2563,7 +2563,12 @@ st.divider()
 col_refresh1, col_refresh2, col_refresh3 = st.columns([1, 2, 1])
 with col_refresh2:
     if st.button("🔄 Actualizar Dashboard", use_container_width=True, type="secondary"):
+        # Limpiar caché de datos
         st.cache_data.clear()
+        # Limpiar session state para resetear filtros a default
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        # Recargar página
         st.rerun()
 
 st.divider()
