@@ -1496,19 +1496,7 @@ todas_alertas = alertas_upstream + alertas_downstream
 st.markdown('<div id="main-content"></div>', unsafe_allow_html=True)
 st.image("assets/banner3.png", use_container_width=True)
 
-# =============================================================================
-# BOTÓN DE IA EN LA PARTE SUPERIOR
-# =============================================================================
-col_spacer, col_ai_btn, col_spacer2 = st.columns([2, 1, 2])
-with col_ai_btn:
-    if st.button("🤖 Asistente IA", key="top_ai_btn", use_container_width=True, type="secondary"):
-        st.session_state.ai_panel_open = not st.session_state.get('ai_panel_open', False)
-        st.rerun()
-
-# Mostrar panel de IA si está abierto (ARRIBA)
-if st.session_state.get('ai_panel_open', False):
-    from src.ai_chat import render_ai_assistant_panel
-    render_ai_assistant_panel()
+# NOTA: Panel de IA temporalmente deshabilitado para estabilizar
 
 # Mostrar errores de carga si existen
 if error_upstream:
@@ -1711,11 +1699,6 @@ elif vista_seleccionada == "🌾 Upstream":
             df_rff_display['Dif'] = df_rff_display['Dif'].apply(lambda x: f"{x:+,.0f}")
             
             st.dataframe(df_rff_display, use_container_width=True, hide_index=True)
-            
-            # Botón de IA debajo de la tabla (pequeño)
-            if st.button("🤖 Analizar RFF", key="ai_rff", help="Analizar con IA"):
-                add_data_to_context("tabla_rff", df_rff, "Tabla RFF Procesada")
-                st.session_state.ai_panel_open = True
         
         with col2:
             st.subheader("🛢️ CPO")
@@ -1744,11 +1727,6 @@ elif vista_seleccionada == "🌾 Upstream":
             df_cpo_display['Dif TM'] = df_cpo_display['Dif TM'].apply(lambda x: f"{x:+,.0f}")
             
             st.dataframe(df_cpo_display, use_container_width=True, hide_index=True)
-            
-            # Botón de IA debajo de la tabla
-            if st.button("🤖 Analizar CPO", key="ai_cpo", help="Analizar con IA"):
-                add_data_to_context("tabla_cpo", df_cpo, "Tabla CPO por Planta")
-                st.session_state.ai_panel_open = True
         
         with col3:
             # Header con selector para IA
