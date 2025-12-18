@@ -55,7 +55,9 @@ from src.ai_chat import (
     add_data_to_context,
     remove_data_from_context,
     render_chat_panel,
-    render_data_selector
+    render_data_selector,
+    render_contextual_ai_button,
+    render_ai_fab_and_panel
 )
 from src.auth import (
     handle_authentication,
@@ -933,6 +935,106 @@ st.markdown("""
         padding-right: 2rem !important;
     }
     
+    /* -------------------------------------------------------------------------
+       AI ASSISTANT PANEL STYLES
+       ------------------------------------------------------------------------- */
+    
+    /* AI Contextual Button (small, next to charts) */
+    button[kind="secondary"]:has([data-testid="stMarkdown"]:contains("🤖")) {
+        background: linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(96, 165, 250, 0.2)) !important;
+        border: 1px solid var(--accent-blue) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 4px 8px !important;
+        min-width: 32px !important;
+        height: 32px !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    button[kind="secondary"]:has([data-testid="stMarkdown"]:contains("🤖")):hover {
+        background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.3)) !important;
+        transform: scale(1.05);
+        box-shadow: 0 0 12px rgba(96, 165, 250, 0.4);
+    }
+    
+    /* AI Panel Container */
+    .ai-panel-container {
+        background: var(--bg-card);
+        border: 1px solid var(--accent-blue);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin: 20px 0;
+        animation: slideUp 0.3s ease-out;
+        box-shadow: 0 0 20px rgba(96, 165, 250, 0.1);
+    }
+    
+    /* AI Suggested Questions (chips) */
+    .stButton > button[key^="suggested_q_"] {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 20px !important;
+        padding: 6px 14px !important;
+        font-size: 0.8rem !important;
+        color: var(--text-secondary) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .stButton > button[key^="suggested_q_"]:hover {
+        border-color: var(--accent-blue) !important;
+        color: var(--accent-blue) !important;
+        background: rgba(96, 165, 250, 0.1) !important;
+    }
+    
+    /* AI Panel Header */
+    .ai-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    /* AI Open Button (FAB alternative) */
+    button[key="open_ai_panel"] {
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark)) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(96, 165, 250, 0.3) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    button[key="open_ai_panel"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(96, 165, 250, 0.4) !important;
+    }
+    
+    /* Chat Message Styling */
+    .ai-chat-message {
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        margin: 8px 0;
+    }
+    
+    .ai-chat-message.user {
+        border-left: 3px solid var(--accent-blue);
+    }
+    
+    .ai-chat-message.assistant {
+        border-left: 3px solid var(--success);
+    }
+    
+    /* Report Preview */
+    .report-preview {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
@@ -1289,16 +1391,16 @@ with st.sidebar:
     st.divider()
     
     # ==========================================================================
-    # PANEL DE CHAT IA
+    # INICIALIZACIÓN DE SESIÓN DE IA
+    # (El panel de IA ahora se renderiza en el área principal)
     # ==========================================================================
     
     # Inicializar sesión de chat
     initialize_chat_session()
     
-    # Renderizar panel de chat
-    render_chat_panel()
+    # Nota: El panel de IA se mueve al área de contenido principal
+    # para mejor experiencia de usuario
     
-    st.divider()
     
     # Footer del sidebar
     st.markdown("""
@@ -1531,12 +1633,11 @@ elif vista_seleccionada == "🌾 Upstream":
         }).reset_index()
         
         with col1:
-            # Header con selector para IA
-            hdr_col1, hdr_col2 = st.columns([0.9, 0.1])
+            # Header con botón de IA contextual
+            hdr_col1, hdr_col2 = st.columns([0.85, 0.15])
             with hdr_col1:
                 st.subheader("📦 RFF Procesada")
-            with hdr_col2:
-                rff_selected = st.checkbox("📌", key="sel_rff", help="Seleccionar para análisis IA")
+            
             # Crear tabla RFF con semáforos
             df_rff = df_zona[['zona', 'rff_presupuesto', 'rff_real']].copy()
             df_rff.columns = ['Planta', 'ME', 'Real']
@@ -1562,17 +1663,16 @@ elif vista_seleccionada == "🌾 Upstream":
             
             st.dataframe(df_rff_display, use_container_width=True, hide_index=True)
             
-            # Agregar al contexto si está seleccionado
-            if rff_selected:
-                add_data_to_context("tabla_rff", df_rff_display, "Tabla RFF Procesada por Planta")
+            # Botón de IA contextual
+            with hdr_col2:
+                render_contextual_ai_button("tabla_rff", df_rff, "Tabla RFF Procesada")
         
         with col2:
-            # Header con selector para IA
-            hdr_col1, hdr_col2 = st.columns([0.9, 0.1])
+            # Header con botón de IA contextual
+            hdr_col1, hdr_col2 = st.columns([0.85, 0.15])
             with hdr_col1:
                 st.subheader("🛢️ CPO")
-            with hdr_col2:
-                cpo_selected = st.checkbox("📌", key="sel_cpo", help="Seleccionar para análisis IA")
+            
             # Crear tabla CPO con semáforos
             df_cpo = df_zona[['zona', 'cpo_presupuesto', 'cpo_real']].copy()
             df_cpo.columns = ['Planta', 'CPO ME', 'CPO Real']
@@ -1598,9 +1698,9 @@ elif vista_seleccionada == "🌾 Upstream":
             
             st.dataframe(df_cpo_display, use_container_width=True, hide_index=True)
             
-            # Agregar al contexto si está seleccionado
-            if cpo_selected:
-                add_data_to_context("tabla_cpo", df_cpo_display, "Tabla CPO por Planta")
+            # Botón de IA contextual
+            with hdr_col2:
+                render_contextual_ai_button("tabla_cpo", df_cpo, "Tabla CPO por Planta")
         
         with col3:
             # Header con selector para IA
@@ -2574,6 +2674,14 @@ with col_refresh2:
             del st.session_state[key]
         # Recargar página
         st.rerun()
+
+# =============================================================================
+# PANEL DE IA - HUB CENTRAL
+# =============================================================================
+# El nuevo panel de IA se renderiza al final del contenido principal
+# permitiendo al usuario interactuar con la IA mientras ve el dashboard
+
+render_ai_fab_and_panel()
 
 st.divider()
 st.markdown(

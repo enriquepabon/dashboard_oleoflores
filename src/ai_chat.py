@@ -462,3 +462,325 @@ export OPENAI_API_KEY='tu-api-key'
                 st.markdown(f"**🧑 Tú:** {item['question']}")
                 st.markdown(f"**🤖 IA:** {item['answer']}")
                 st.divider()
+
+
+# =============================================================================
+# NUEVOS COMPONENTES DE UI - PANEL LATERAL Y BOTONES
+# =============================================================================
+
+def render_contextual_ai_button(key: str, data: Any, title: str) -> bool:
+    """
+    Renderiza un botón discreto de IA junto a una gráfica/tabla.
+    Al hacer click, abre el panel de IA con esos datos pre-cargados.
+    
+    Args:
+        key: Identificador único del elemento
+        title: Título de la gráfica/tabla
+        data: Datos asociados al elemento
+    
+    Returns:
+        bool: True si se hizo click
+    """
+    button_key = f"ai_btn_{key}"
+    
+    clicked = st.button(
+        "🤖",
+        key=button_key,
+        help=f"Analizar con IA: {title}",
+        use_container_width=True
+    )
+    
+    if clicked:
+        # Cargar datos en contexto
+        add_data_to_context(key, data, title)
+        # Abrir panel de IA
+        st.session_state.ai_panel_open = True
+        st.session_state.ai_panel_focus = key
+    
+    return clicked
+
+
+def render_suggested_questions(data: Any = None, title: str = "") -> Optional[str]:
+    """
+    Renderiza chips de preguntas sugeridas basadas en el contexto.
+    
+    Args:
+        data: Datos para contexto (opcional, usa selected_data si no se proporciona)
+        title: Título para detectar contexto
+    
+    Returns:
+        str: Pregunta seleccionada o None
+    """
+    try:
+        from src.ai_insights import get_suggested_questions
+    except ImportError:
+        # Fallback si no está disponible
+        questions = [
+            "¿Cuál es el resumen de estos datos?",
+            "¿Hay anomalías detectables?",
+            "¿Qué recomendaciones tienes?"
+        ]
+    else:
+        questions = get_suggested_questions(data, title)
+    
+    # Mostrar como botones en fila
+    st.markdown("**💡 Preguntas sugeridas:**")
+    
+    cols = st.columns(len(questions))
+    selected_question = None
+    
+    for i, (col, question) in enumerate(zip(cols, questions)):
+        with col:
+            if st.button(
+                question[:30] + "..." if len(question) > 30 else question,
+                key=f"suggested_q_{i}",
+                help=question,
+                use_container_width=True
+            ):
+                selected_question = question
+    
+    return selected_question
+
+
+def render_floating_ai_button():
+    """
+    Renderiza el botón flotante (FAB) de IA que abre el panel principal.
+    Este botón siempre está visible en la esquina inferior derecha.
+    
+    Note: En Streamlit usamos un enfoque basado en session_state
+    ya que no podemos tener elementos realmente flotantes sin CSS custom.
+    """
+    # Inicializar estado del panel
+    if 'ai_panel_open' not in st.session_state:
+        st.session_state.ai_panel_open = False
+    
+    # El botón flotante se implementa via CSS en el contenedor principal
+    # Aquí controlamos la lógica
+    return st.session_state.ai_panel_open
+
+
+def toggle_ai_panel():
+    """Alterna el estado del panel de IA."""
+    st.session_state.ai_panel_open = not st.session_state.get('ai_panel_open', False)
+
+
+def render_ai_assistant_panel():
+    """
+    Renderiza el panel lateral de IA como un contenedor expandible.
+    Este es el hub central para interacción con IA.
+    
+    En Streamlit, simulamos el panel lateral usando un expander o columna condicional.
+    """
+    # Verificar si el panel debe estar abierto
+    if not st.session_state.get('ai_panel_open', False):
+        return
+    
+    st.markdown("---")
+    
+    # Panel container
+    with st.container():
+        # Header del panel
+        col_title, col_close = st.columns([0.9, 0.1])
+        
+        with col_title:
+            st.markdown("### 🤖 Asistente de Análisis IA")
+        
+        with col_close:
+            if st.button("✕", key="close_ai_panel", help="Cerrar panel"):
+                st.session_state.ai_panel_open = False
+                st.rerun()
+        
+        # Verificar proveedores
+        providers = get_available_providers()
+        
+        if not any(providers.values()):
+            st.warning("⚠️ No hay API de IA configurada")
+            st.markdown("""
+Configura una de estas opciones:
+- **Google Gemini:** `GOOGLE_API_KEY` en `.env`
+- **OpenAI:** `OPENAI_API_KEY` en `.env`
+            """)
+            return
+        
+        # Status de conexión
+        available_models = get_available_models()
+        if available_models:
+            current_model = st.session_state.get('ai_model', available_models[0])
+            model_name = MODELS.get(current_model, {}).get('name', current_model)
+            st.success(f"✅ Conectado: {model_name}")
+        
+        # Selector de modelo (colapsado)
+        with st.expander("⚙️ Configuración", expanded=False):
+            if len(available_models) > 1:
+                model_options = {m: f"{MODELS[m]['name']} ({MODELS[m]['cost']})" for m in available_models}
+                selected_model = st.selectbox(
+                    "Modelo:",
+                    options=available_models,
+                    format_func=lambda x: model_options[x],
+                    key="panel_model_selector"
+                )
+                st.session_state.ai_model = selected_model
+        
+        st.markdown("---")
+        
+        # Contexto seleccionado
+        st.markdown("**📊 Datos en contexto:**")
+        
+        context_items = get_context_items()
+        if not context_items:
+            st.caption("No hay datos seleccionados. Haz click en 🤖 junto a una gráfica o tabla.")
+        else:
+            for item_key in context_items:
+                item = st.session_state.selected_data.get(item_key, {})
+                desc = item.get('description', item_key)
+                
+                col1, col2 = st.columns([0.85, 0.15])
+                with col1:
+                    st.markdown(f"• {desc}")
+                with col2:
+                    if st.button("🗑️", key=f"remove_{item_key}", help="Quitar"):
+                        remove_data_from_context(item_key)
+                        st.rerun()
+        
+        st.markdown("---")
+        
+        # Preguntas sugeridas
+        focus_key = st.session_state.get('ai_panel_focus')
+        focus_data = None
+        focus_title = ""
+        
+        if focus_key and focus_key in st.session_state.get('selected_data', {}):
+            focus_item = st.session_state.selected_data[focus_key]
+            focus_data = focus_item.get('data')
+            focus_title = focus_item.get('description', '')
+        
+        selected_suggestion = render_suggested_questions(focus_data, focus_title)
+        
+        st.markdown("---")
+        
+        # Campo de pregunta
+        question_value = selected_suggestion if selected_suggestion else ""
+        
+        question = st.text_area(
+            "💬 Tu pregunta:",
+            value=question_value,
+            placeholder="Escribe tu pregunta o selecciona una sugerida...",
+            height=80,
+            key="ai_panel_question"
+        )
+        
+        # Botones de acción
+        col_send, col_report, col_clear = st.columns(3)
+        
+        with col_send:
+            send_btn = st.button("📤 Enviar", type="primary", use_container_width=True)
+        
+        with col_report:
+            report_btn = st.button("📑 Generar Reporte", use_container_width=True)
+        
+        with col_clear:
+            if st.button("🗑️ Limpiar", use_container_width=True):
+                clear_history()
+                clear_context()
+                st.rerun()
+        
+        # Procesar envío de pregunta
+        if send_btn and question.strip():
+            with st.spinner("🔄 Analizando..."):
+                answer = query_ai(question)
+                add_to_history(question, answer)
+            st.rerun()
+        
+        # Procesar generación de reporte
+        if report_btn:
+            _handle_report_generation()
+        
+        st.markdown("---")
+        
+        # Historial de chat
+        if 'chat_history' in st.session_state and st.session_state.chat_history:
+            st.markdown("**📜 Conversación:**")
+            
+            for item in reversed(st.session_state.chat_history[-5:]):
+                with st.container():
+                    st.markdown(f"**🧑 Tú:** {item['question']}")
+                    st.markdown(f"**🤖 IA:** {item['answer']}")
+                    st.markdown("---")
+
+
+def _handle_report_generation():
+    """Maneja la generación y descarga de reportes."""
+    try:
+        from src.ai_reports import generate_executive_report, export_report_to_pdf, get_pdf_availability
+    except ImportError:
+        st.error("❌ Módulo de reportes no disponible")
+        return
+    
+    if 'selected_data' not in st.session_state or not st.session_state.selected_data:
+        st.warning("⚠️ Selecciona datos para incluir en el reporte")
+        return
+    
+    with st.spinner("📝 Generando reporte..."):
+        # Generar reporte en Markdown
+        report_md = generate_executive_report(
+            st.session_state.selected_data,
+            periodo="Período seleccionado"
+        )
+        
+        st.session_state.generated_report = report_md
+    
+    # Mostrar preview
+    with st.expander("📄 Vista previa del reporte", expanded=True):
+        st.markdown(report_md)
+    
+    # Botones de descarga
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Descargar como Markdown
+        st.download_button(
+            "📥 Descargar Markdown",
+            data=report_md,
+            file_name="reporte_oleoflores.md",
+            mime="text/markdown"
+        )
+    
+    with col2:
+        # Verificar disponibilidad de PDF
+        pdf_available, pdf_msg = get_pdf_availability()
+        
+        if pdf_available:
+            pdf_bytes = export_report_to_pdf(report_md)
+            if pdf_bytes:
+                st.download_button(
+                    "📥 Descargar PDF",
+                    data=pdf_bytes,
+                    file_name="reporte_oleoflores.pdf",
+                    mime="application/pdf"
+                )
+            else:
+                st.caption("⚠️ Error generando PDF")
+        else:
+            st.caption(f"ℹ️ {pdf_msg}")
+
+
+def render_ai_fab_and_panel():
+    """
+    Función principal que renderiza tanto el FAB como el panel.
+    Llamar esta función al final del layout principal.
+    """
+    # Inicializar estados
+    if 'ai_panel_open' not in st.session_state:
+        st.session_state.ai_panel_open = False
+    
+    # Renderizar panel si está abierto
+    if st.session_state.ai_panel_open:
+        render_ai_assistant_panel()
+    else:
+        # Mostrar botón para abrir el panel (como alternativa al FAB CSS)
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("🤖 Abrir Asistente IA", key="open_ai_panel", type="primary"):
+                st.session_state.ai_panel_open = True
+                st.rerun()
