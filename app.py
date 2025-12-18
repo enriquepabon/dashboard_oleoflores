@@ -9,8 +9,11 @@ Ejecutar con: streamlit run app.py
 """
 
 # Cargar variables de entorno desde .env (DEBE ir antes de otros imports)
-from dotenv import load_dotenv
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # En Streamlit Cloud las variables se configuran en secrets
 
 import streamlit as st
 import pandas as pd

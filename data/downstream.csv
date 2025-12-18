@@ -174,7 +174,7 @@ fecha,producto,tipo,produccion_me,produccion_real,cumplimiento
 2025-11-30,Total Oleína,total,80.0,187.35,234.19
 2025-12-01,Fracc 1,fraccionamiento,92.0,100.85,109.62
 2025-12-01,Fracc 2,fraccionamiento,117.0,109.03,93.19
-2025-12-01,Margarinas,producto,63.0,0.0,0.0
+2025-12-01,Margarinas,producto,63.0,66.15,105.0
 2025-12-01,Refinería 1,refineria,355.0,362.47,102.1
 2025-12-01,Refinería 2,refineria,30.0,30.13,100.43
 2025-12-01,Total Oleína,total,209.0,209.88,100.42
@@ -220,42 +220,42 @@ fecha,producto,tipo,produccion_me,produccion_real,cumplimiento
 2025-12-08,Refinería 1,refineria,355.0,341.32,96.15
 2025-12-08,Refinería 2,refineria,35.0,30.35,86.7
 2025-12-08,Total Oleína,total,209.0,205.13,98.15
-2025-12-09,Fracc 1,fraccionamiento,92.0,0.0,0.0
-2025-12-09,Fracc 2,fraccionamiento,117.0,0.0,0.0
-2025-12-09,Margarinas,producto,63.0,0.0,0.0
-2025-12-09,Refinería 1,refineria,355.0,0.0,0.0
-2025-12-09,Refinería 2,refineria,15.0,0.0,0.0
-2025-12-09,Total Oleína,total,209.0,0.0,0.0
-2025-12-10,Fracc 1,fraccionamiento,92.0,0.0,0.0
-2025-12-10,Fracc 2,fraccionamiento,117.0,0.0,0.0
-2025-12-10,Margarinas,producto,63.0,0.0,0.0
-2025-12-10,Refinería 1,refineria,355.0,0.0,0.0
-2025-12-10,Refinería 2,refineria,37.0,0.0,0.0
-2025-12-10,Total Oleína,total,209.0,0.0,0.0
-2025-12-11,Fracc 1,fraccionamiento,92.0,0.0,0.0
-2025-12-11,Fracc 2,fraccionamiento,117.0,0.0,0.0
+2025-12-09,Fracc 1,fraccionamiento,92.0,95.43,103.73
+2025-12-09,Fracc 2,fraccionamiento,117.0,111.41,95.22
+2025-12-09,Margarinas,producto,63.0,50.4,80.0
+2025-12-09,Refinería 1,refineria,355.0,368.28,103.74
+2025-12-09,Refinería 2,refineria,15.0,30.0,200.03
+2025-12-09,Total Oleína,total,209.0,206.84,98.97
+2025-12-10,Fracc 1,fraccionamiento,92.0,94.7,102.93
+2025-12-10,Fracc 2,fraccionamiento,117.0,118.19,101.02
+2025-12-10,Margarinas,producto,63.0,63.0,100.0
+2025-12-10,Refinería 1,refineria,355.0,352.25,99.23
+2025-12-10,Refinería 2,refineria,37.0,18.26,49.36
+2025-12-10,Total Oleína,total,209.0,212.89,101.86
+2025-12-11,Fracc 1,fraccionamiento,92.0,97.11,105.55
+2025-12-11,Fracc 2,fraccionamiento,117.0,111.06,94.93
 2025-12-11,Margarinas,producto,63.0,40.95,65.0
-2025-12-11,Refinería 1,refineria,355.0,0.0,0.0
-2025-12-11,Refinería 2,refineria,37.0,0.0,0.0
-2025-12-11,Total Oleína,total,209.0,0.0,0.0
-2025-12-12,Fracc 1,fraccionamiento,92.0,0.0,0.0
-2025-12-12,Fracc 2,fraccionamiento,117.0,0.0,0.0
-2025-12-12,Margarinas,producto,63.0,0.0,0.0
-2025-12-12,Refinería 1,refineria,355.0,0.0,0.0
-2025-12-12,Refinería 2,refineria,37.0,0.0,0.0
-2025-12-12,Total Oleína,total,209.0,0.0,0.0
-2025-12-13,Fracc 1,fraccionamiento,92.0,0.0,0.0
-2025-12-13,Fracc 2,fraccionamiento,117.0,0.0,0.0
-2025-12-13,Margarinas,producto,63.0,0.0,0.0
-2025-12-13,Refinería 1,refineria,355.0,0.0,0.0
-2025-12-13,Refinería 2,refineria,37.0,0.0,0.0
-2025-12-13,Total Oleína,total,209.0,0.0,0.0
-2025-12-14,Fracc 1,fraccionamiento,92.0,0.0,0.0
-2025-12-14,Fracc 2,fraccionamiento,117.0,0.0,0.0
-2025-12-14,Margarinas,producto,59.85,0.0,0.0
-2025-12-14,Refinería 1,refineria,280.0,0.0,0.0
-2025-12-14,Refinería 2,refineria,37.0,0.0,0.0
-2025-12-14,Total Oleína,total,209.0,0.0,0.0
+2025-12-11,Refinería 1,refineria,355.0,329.02,92.68
+2025-12-11,Refinería 2,refineria,37.0,33.92,91.67
+2025-12-11,Total Oleína,total,209.0,208.17,99.6
+2025-12-12,Fracc 1,fraccionamiento,92.0,84.7,92.07
+2025-12-12,Fracc 2,fraccionamiento,117.0,14.59,12.47
+2025-12-12,Margarinas,producto,63.0,50.4,80.0
+2025-12-12,Refinería 1,refineria,355.0,248.45,69.98
+2025-12-12,Refinería 2,refineria,37.0,27.97,75.61
+2025-12-12,Total Oleína,total,209.0,99.29,47.51
+2025-12-13,Fracc 1,fraccionamiento,92.0,95.39,103.68
+2025-12-13,Fracc 2,fraccionamiento,117.0,55.44,47.38
+2025-12-13,Margarinas,producto,63.0,66.15,105.0
+2025-12-13,Refinería 1,refineria,355.0,328.14,92.43
+2025-12-13,Refinería 2,refineria,37.0,31.47,85.05
+2025-12-13,Total Oleína,total,209.0,150.83,72.17
+2025-12-14,Fracc 1,fraccionamiento,92.0,92.2,100.22
+2025-12-14,Fracc 2,fraccionamiento,117.0,118.18,101.01
+2025-12-14,Margarinas,producto,59.85,50.4,84.21
+2025-12-14,Refinería 1,refineria,280.0,340.74,121.69
+2025-12-14,Refinería 2,refineria,37.0,38.38,103.74
+2025-12-14,Total Oleína,total,209.0,210.38,100.66
 2025-12-15,Fracc 1,fraccionamiento,92.0,0.0,0.0
 2025-12-15,Fracc 2,fraccionamiento,117.0,0.0,0.0
 2025-12-15,Margarinas,producto,63.0,0.0,0.0
