@@ -994,19 +994,54 @@ st.markdown("""
         border-bottom: 1px solid var(--border-color);
     }
     
-    /* AI Open Button (FAB alternative) */
-    button[key="open_ai_panel"] {
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark)) !important;
+    /* AI Top Button - Mejor contraste */
+    button[key="top_ai_btn"] {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+        color: #ffffff !important;
+        border: none !important;
         border-radius: var(--radius-lg) !important;
         padding: 12px 24px !important;
         font-weight: 600 !important;
-        box-shadow: 0 4px 15px rgba(96, 165, 250, 0.3) !important;
+        font-size: 1rem !important;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    button[key="top_ai_btn"]:hover {
+        background: linear-gradient(135deg, #059669, #047857) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+    }
+    
+    /* Botones de analizar por tabla */
+    button[key^="ai_"] {
+        background: transparent !important;
+        color: var(--success) !important;
+        border: 1px solid var(--success) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 4px 12px !important;
+        font-size: 0.8rem !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    button[key^="ai_"]:hover {
+        background: rgba(16, 185, 129, 0.1) !important;
+        transform: scale(1.02);
+    }
+    
+    /* AI Open Button (FAB alternative) - legacy */
+    button[key="open_ai_panel"] {
+        background: linear-gradient(135deg, var(--success), #059669) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
         transition: all 0.3s ease !important;
     }
     
     button[key="open_ai_panel"]:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(96, 165, 250, 0.4) !important;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
     }
     
     /* Chat Message Styling */
@@ -1458,6 +1493,20 @@ todas_alertas = alertas_upstream + alertas_downstream
 st.markdown('<div id="main-content"></div>', unsafe_allow_html=True)
 st.image("assets/banner3.png", use_container_width=True)
 
+# =============================================================================
+# BOTÓN DE IA EN LA PARTE SUPERIOR
+# =============================================================================
+col_spacer, col_ai_btn, col_spacer2 = st.columns([2, 1, 2])
+with col_ai_btn:
+    if st.button("🤖 Asistente IA", key="top_ai_btn", use_container_width=True, type="secondary"):
+        st.session_state.ai_panel_open = not st.session_state.get('ai_panel_open', False)
+        st.rerun()
+
+# Mostrar panel de IA si está abierto (ARRIBA)
+if st.session_state.get('ai_panel_open', False):
+    from src.ai_chat import render_ai_assistant_panel
+    render_ai_assistant_panel()
+
 # Mostrar errores de carga si existen
 if error_upstream:
     st.error(f"⚠️ Error cargando datos Upstream: {error_upstream}")
@@ -1633,10 +1682,7 @@ elif vista_seleccionada == "🌾 Upstream":
         }).reset_index()
         
         with col1:
-            # Header con botón de IA contextual
-            hdr_col1, hdr_col2 = st.columns([0.85, 0.15])
-            with hdr_col1:
-                st.subheader("📦 RFF Procesada")
+            st.subheader("📦 RFF Procesada")
             
             # Crear tabla RFF con semáforos
             df_rff = df_zona[['zona', 'rff_presupuesto', 'rff_real']].copy()
@@ -1663,15 +1709,13 @@ elif vista_seleccionada == "🌾 Upstream":
             
             st.dataframe(df_rff_display, use_container_width=True, hide_index=True)
             
-            # Botón de IA contextual
-            with hdr_col2:
-                render_contextual_ai_button("tabla_rff", df_rff, "Tabla RFF Procesada")
+            # Botón de IA debajo de la tabla (pequeño)
+            if st.button("🤖 Analizar RFF", key="ai_rff", help="Analizar con IA"):
+                add_data_to_context("tabla_rff", df_rff, "Tabla RFF Procesada")
+                st.session_state.ai_panel_open = True
         
         with col2:
-            # Header con botón de IA contextual
-            hdr_col1, hdr_col2 = st.columns([0.85, 0.15])
-            with hdr_col1:
-                st.subheader("🛢️ CPO")
+            st.subheader("🛢️ CPO")
             
             # Crear tabla CPO con semáforos
             df_cpo = df_zona[['zona', 'cpo_presupuesto', 'cpo_real']].copy()
@@ -1698,9 +1742,10 @@ elif vista_seleccionada == "🌾 Upstream":
             
             st.dataframe(df_cpo_display, use_container_width=True, hide_index=True)
             
-            # Botón de IA contextual
-            with hdr_col2:
-                render_contextual_ai_button("tabla_cpo", df_cpo, "Tabla CPO por Planta")
+            # Botón de IA debajo de la tabla
+            if st.button("🤖 Analizar CPO", key="ai_cpo", help="Analizar con IA"):
+                add_data_to_context("tabla_cpo", df_cpo, "Tabla CPO por Planta")
+                st.session_state.ai_panel_open = True
         
         with col3:
             # Header con selector para IA
@@ -2675,13 +2720,7 @@ with col_refresh2:
         # Recargar página
         st.rerun()
 
-# =============================================================================
-# PANEL DE IA - HUB CENTRAL
-# =============================================================================
-# El nuevo panel de IA se renderiza al final del contenido principal
-# permitiendo al usuario interactuar con la IA mientras ve el dashboard
-
-render_ai_fab_and_panel()
+# (Panel de IA ahora está arriba, después del banner)
 
 st.divider()
 st.markdown(
